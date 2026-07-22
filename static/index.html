@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Web-SDR Monitor — Real-time spectrum analysis and illegal transmitter detection">
+    <title>Web-SDR Monitor</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="app-container">
+
+    <!-- ═══════════════════════════════════════════
+         SIDEBAR
+    ════════════════════════════════════════════ -->
+    <aside class="sidebar">
+
+        <!-- Brand -->
+        <div class="brand">
+            <div class="brand-icon">📡</div>
+            <div class="brand-text">
+                <h1>Web-SDR</h1>
+                <span>Spectrum Monitor</span>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">◉</span> Hardware Status</span>
+            </div>
+            <div class="section-body">
+                <div id="status-indicator" class="status-badge simulation">
+                    <span class="status-dot"></span>
+                    <span id="status-text" class="status-label">SIMULATION</span>
+                </div>
+                <button id="btn-reload" class="btn btn-ghost btn-sm btn-full">↺ Reload Hardware</button>
+            </div>
+        </div>
+
+        <!-- Stream Control -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">▶</span> Stream Control</span>
+            </div>
+            <div class="section-body">
+                <div class="btn-group">
+                    <button id="btn-start" class="btn btn-primary" style="flex:1">▶ Start</button>
+                    <button id="btn-stop"  class="btn btn-danger"  style="flex:1" disabled>■ Stop</button>
+                </div>
+                <button id="btn-record" class="btn btn-ghost btn-full">⏺ Record IQ</button>
+            </div>
+        </div>
+
+        <!-- Tuning -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">⚙</span> Tuning</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <label>Start Freq (MHz)</label>
+                    <input type="number" id="start-freq-input" step="0.1" value="99.0">
+                </div>
+                <div class="form-row">
+                    <label>Stop Freq (MHz)</label>
+                    <input type="number" id="stop-freq-input" step="0.1" value="101.0">
+                </div>
+                <div class="form-row">
+                    <label>Scan Mode</label>
+                    <select id="scan-mode-input">
+                        <option value="single">Single (Real-time Span)</option>
+                        <option value="sweep">Sweep (Frequency Sweep)</option>
+                    </select>
+                </div>
+                <div class="form-row" id="row-sweep-step">
+                    <label>Sweep Step (MHz)</label>
+                    <input type="number" id="sweep-step-input" step="0.1" value="2.0">
+                </div>
+                <div class="form-row" id="row-dwell-time">
+                    <label>Dwell Time (ms)</label>
+                    <input type="number" id="dwell-time-input" step="50" value="200">
+                </div>
+            </div>
+        </div>
+
+        <!-- Gain -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">◈</span> Gain Control</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <label>LNA</label>
+                    <input type="range" id="lna-input" min="0" max="40" step="8" value="16">
+                    <span class="range-val" id="lna-val">16</span>
+                </div>
+                <div class="form-row">
+                    <label>VGA</label>
+                    <input type="range" id="vga-input" min="0" max="62" step="2" value="20">
+                    <span class="range-val" id="vga-val">20</span>
+                </div>
+                <div class="form-row">
+                    <label>AMP (+14 dB)</label>
+                    <input type="checkbox" id="amp-input">
+                </div>
+            </div>
+        </div>
+
+        <!-- Detection -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">⚠</span> Detection</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <label>Threshold (dBm)</label>
+                    <input type="range" id="thresh-input" min="-120" max="0" step="1" value="-70">
+                    <span class="range-val" id="thresh-val">-70</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Localization -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">◎</span> Localization</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row">
+                    <label>Receiver Coords</label>
+                    <input type="text" id="receiver-coords-input" value="-6.2088, 106.8456" placeholder="lat, lon">
+                </div>
+                <div class="btn-group mt-1">
+                    <button id="btn-use-gps"       class="btn btn-ghost btn-sm" style="flex:1">⊕ GPS</button>
+                    <button id="btn-set-receiver"   class="btn btn-ghost btn-sm" style="flex:1">✎ Manual</button>
+                </div>
+                <button id="btn-capture-loc" class="btn btn-ghost btn-sm btn-full mt-1">⊞ Capture Point</button>
+                <div class="btn-group mt-1">
+                    <button id="btn-estimate-loc"   class="btn btn-ghost btn-sm" style="flex:1">⊹ Estimate</button>
+                    <button id="btn-reset-loc"      class="btn btn-sm" style="flex:1;background:var(--danger-dim);color:var(--danger);border:1px solid rgba(240,64,96,0.3)">✕ Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debug -->
+        <div class="sidebar-section">
+            <div class="section-header">
+                <span class="section-title"><span class="icon">⌥</span> Debug Log</span>
+            </div>
+            <div class="section-body">
+                <pre id="debug-log" class="debug-log">Initializing…</pre>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- ═══════════════════════════════════════════
+         MAIN CONTENT
+    ════════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <!-- Charts Panel -->
+        <div class="card charts-panel">
+            <div class="card-header">
+                <span class="card-title"><span class="icon">〰</span> Spectrum &amp; Waterfall</span>
+                <span style="font-size:0.72rem;color:var(--text-muted)" id="freq-display">— MHz</span>
+            </div>
+            <div class="canvas-area">
+                <div class="canvas-wrapper spectrum-wrapper">
+                    <span class="canvas-label">Spectrum</span>
+                    <canvas id="spectrum-canvas"></canvas>
+                </div>
+                <div class="canvas-wrapper waterfall-wrapper">
+                    <span class="canvas-label">Waterfall</span>
+                    <canvas id="waterfall-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="bottom-row">
+
+            <!-- Detections -->
+            <div class="card detections-panel">
+                <div class="card-header">
+                    <span class="card-title"><span class="icon">⚡</span> Detections</span>
+                    <button id="btn-refresh-det" class="btn btn-ghost btn-sm">↻ Refresh</button>
+                </div>
+                <div class="table-wrap">
+                    <table id="detections-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Freq (MHz)</th>
+                                <th>Power (dBm)</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">No detections yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Map -->
+            <div class="card map-panel">
+                <div class="card-header">
+                    <span class="card-title"><span class="icon">🗺</span> Localization Map</span>
+                </div>
+                <div id="map-container"></div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- ── Error Catcher ─────────────────────────────── -->
+<script>
+    window.addEventListener('error', (e) => {
+        console.error('Global error:', e.message, 'at', e.filename + ':' + e.lineno);
+    });
+</script>
+
+<!-- ── Leaflet ───────────────────────────────────── -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<!-- ── App Scripts ──────────────────────────────── -->
+<script src="/static/js/map.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

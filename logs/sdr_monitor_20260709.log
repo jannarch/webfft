@@ -1,0 +1,97 @@
+2026-07-09 13:17:37 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 13:17:37 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 13:17:37 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 13:44:46 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 13:44:46 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 13:44:46 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 13:49:14 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 13:49:14 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 13:49:14 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 13:49:15 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 29E35454 [simulation]
+2026-07-09 13:49:15 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 13:49:15 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 13:49:15 [INFO    ] sdr_monitor.web_backend (main.py:122): Web-SDR Application Started. Session: 29E35454
+2026-07-09 13:49:46 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 13:49:46 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 13:49:46 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 13:49:46 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 5A12DE9A [simulation]
+2026-07-09 13:49:46 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 13:49:46 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 13:49:46 [INFO    ] sdr_monitor.web_backend (main.py:122): Web-SDR Application Started. Session: 5A12DE9A
+2026-07-09 13:53:45 [INFO    ] sdr_monitor.web_backend (main.py:126): Shutting down Web-SDR Application...
+2026-07-09 13:57:28 [INFO    ] sdr_monitor.web_backend (main.py:126): Shutting down Web-SDR Application...
+2026-07-09 13:57:37 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 13:57:37 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 13:57:37 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 13:57:37 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 9315DA52 [simulation]
+2026-07-09 13:57:37 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 13:57:37 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 13:57:37 [INFO    ] sdr_monitor.web_backend (main.py:122): Web-SDR Application Started. Session: 9315DA52
+2026-07-09 14:10:19 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:10:19 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:10:19 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:10:20 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: D0BE59D1 [simulation]
+2026-07-09 14:10:20 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:10:20 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:10:20 [INFO    ] sdr_monitor.web_backend (main.py:122): Web-SDR Application Started. Session: D0BE59D1
+2026-07-09 14:28:34 [INFO    ] sdr_monitor.web_backend (main.py:126): Shutting down Web-SDR Application...
+2026-07-09 14:28:44 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:28:44 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 707E860A [simulation]
+2026-07-09 14:28:44 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 54C41FAA [simulation]
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: 54C41FAA
+2026-07-09 14:28:44 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: 54C41FAA
+2026-07-09 14:29:47 [INFO    ] sdr_monitor.web_backend (main.py:126): Shutting down Web-SDR Application...
+2026-07-09 14:30:07 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:30:07 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:30:07 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:30:08 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 86857393 [simulation]
+2026-07-09 14:30:08 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:30:08 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:30:08 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 74631258 [simulation]
+2026-07-09 14:30:08 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: 74631258
+2026-07-09 14:30:08 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: 74631258
+2026-07-09 14:31:13 [INFO    ] sdr_monitor.web_backend (main.py:133): Shutting down Web-SDR Application...
+2026-07-09 14:38:23 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:38:23 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 1EC2C704 [simulation]
+2026-07-09 14:38:24 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 0C97F33B [simulation]
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: 0C97F33B
+2026-07-09 14:38:24 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: 0C97F33B
+2026-07-09 14:40:24 [INFO    ] sdr_monitor.web_backend (main.py:133): Shutting down Web-SDR Application...
+2026-07-09 14:40:33 [INFO    ] sdr_monitor.web_backend (main.py:133): Shutting down Web-SDR Application...
+2026-07-09 14:40:34 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:40:34 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:40:34 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:40:34 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 788618EE [simulation]
+2026-07-09 14:40:34 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:40:34 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:40:35 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 9648B419 [simulation]
+2026-07-09 14:40:35 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: 9648B419
+2026-07-09 14:40:35 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: 9648B419
+2026-07-09 14:40:47 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:40:47 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:40:47 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:40:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: A152858F [simulation]
+2026-07-09 14:40:48 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:40:48 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:40:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 072DBC51 [simulation]
+2026-07-09 14:40:48 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: 072DBC51
+2026-07-09 14:40:48 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: 072DBC51
+2026-07-09 14:41:08 [INFO    ] sdr_monitor.web_backend (main.py:133): Shutting down Web-SDR Application...
+2026-07-09 14:42:47 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260709.log
+2026-07-09 14:42:48 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:81): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: A66E7896 [simulation]
+2026-07-09 14:42:48 [WARNING ] sdr_monitor.sdr_engine (sdr_engine.py:194): SoapySDR not installed – falling back to simulation.
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:419): SDREngine initialized in simulation mode.
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: C8263C83 [simulation]
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.web_backend (main.py:111): SDR started in [SIMULATION] mode. Session: C8263C83
+2026-07-09 14:42:48 [INFO    ] sdr_monitor.web_backend (main.py:129): Web-SDR Application Started. Session: C8263C83
+2026-07-09 14:43:33 [INFO    ] sdr_monitor.web_backend (main.py:133): Shutting down Web-SDR Application...

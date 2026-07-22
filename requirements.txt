@@ -1,0 +1,31 @@
+# SDR Monitor — Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# ── GUI Framework ──────────────────────────────────────────────────────────────
+PyQt5>=5.15.9
+PyQtWebEngine>=5.15.6
+
+# ── Real-time Plotting ─────────────────────────────────────────────────────────
+pyqtgraph>=0.13.3
+
+# ── Signal Processing ──────────────────────────────────────────────────────────
+numpy>=1.24.0
+scipy>=1.10.0
+
+# ── Mapping ────────────────────────────────────────────────────────────────────
+folium>=0.14.0
+
+# ── Data Handling ──────────────────────────────────────────────────────────────
+pandas>=2.0.0
+
+# ── SDR Hardware (install separately on Windows via PothosSDR / conda) ─────────
+# SoapySDR  →  conda install -c conda-forge soapysdr soapysdr-module-hackrf
+# OR via PothosSDR installer:  https://github.com/pothosware/PothosSDR/wiki/Tutorial
+
+# ── Optional ───────────────────────────────────────────────────────────────────
+# pyFFTW>=0.13.0  # Faster FFT (optional, requires FFTW3 native lib)
+ 
+# ── Web backend prototype
+fastapi>=0.95.0
+uvicorn[standard]>=0.21.0
+websockets>=11.0.0

@@ -1,0 +1,11 @@
+{
+  "center_frequency_hz": 100000000.0,
+  "center_frequency_mhz": 100.0,
+  "sample_rate_hz": 2000000.0,
+  "timestamp": "2026-07-16T14:41:17.127148",
+  "filename": "iq_100.000MHz_20260716_144117.iq",
+  "duration_sec": 188.164,
+  "total_samples": 1875968,
+  "file_size_bytes": 15007744,
+  "notes": "Web Recording"
+}

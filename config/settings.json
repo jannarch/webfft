@@ -1,0 +1,69 @@
+{
+  "sdr": {
+    "center_frequency_hz": 100000000,
+    "sample_rate_hz": 2000000,
+    "lna_gain": 16,
+    "vga_gain": 20,
+    "amp_enabled": false,
+    "fft_size": 2048,
+    "update_rate_hz": 25,
+    "window_function": "hann"
+  },
+  "scanner": {
+    "mode": "continuous",
+    "sweep_enabled": false,
+    "sweep_start_hz": 88000000,
+    "sweep_stop_hz": 108000000,
+    "sweep_step_hz": 2000000,
+    "dwell_time_ms": 200
+  },
+  "detection": {
+    "threshold_dbm": -60.0,
+    "noise_floor_dbm": -90.0,
+    "min_duration_ms": 150.0,
+    "peak_hold": true,
+    "alert_sound": false,
+    "adaptive_threshold": true,
+    "adaptive_factor": 1.5
+  },
+  "localization": {
+    "mode": "single_sdr",
+    "receiver_lat": -6.2088,
+    "receiver_lon": 106.8456,
+    "path_loss_exponent": 2.7,
+    "reference_distance_m": 1.0,
+    "reference_power_dbm": -30.0,
+    "min_measurement_points": 3,
+    "multi_sdr_devices": []
+  },
+  "recording": {
+    "output_dir": "recordings",
+    "auto_split_mb": 500,
+    "format": "complex64",
+    "max_duration_sec": 3600
+  },
+  "database": {
+    "path": "data/sdr_monitor.db",
+    "auto_vacuum": true
+  },
+  "display": {
+    "theme": "dark",
+    "waterfall_history_lines": 256,
+    "colormap": "viridis",
+    "show_grid": true,
+    "spectrum_alpha": 0.85,
+    "max_hold_enabled": false
+  },
+  "map": {
+    "center_lat": -6.2088,
+    "center_lon": 106.8456,
+    "zoom_start": 12,
+    "tile_layer": "OpenStreetMap",
+    "auto_refresh_sec": 5
+  },
+  "app": {
+    "log_level": "INFO",
+    "log_dir": "logs",
+    "language": "id"
+  }
+}
