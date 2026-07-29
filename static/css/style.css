@@ -102,22 +102,44 @@ body {
 .brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px 18px 16px;
+    gap: 10px;
+    padding: 16px 18px 14px;
     border-bottom: 1px solid var(--border);
 }
 
+.brand-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
 .brand-icon {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-md);
     background: linear-gradient(135deg, var(--accent), #22d3a0);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
-    box-shadow: 0 0 16px var(--accent-glow);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+
+.brand-logos {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.brand-logo {
+    height: 60px;
+    width: auto;
+    max-width: 28px;
+    object-fit: contain;
+    opacity: 0.9;
 }
 
 .brand-text h1 {
