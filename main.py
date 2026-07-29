@@ -60,6 +60,7 @@ class ConfigPayload(BaseModel):
     sweep_step_hz: float = None
     dwell_time_ms: float = None
     threshold_db: float = None
+    min_snr_db: float = None
 
 class RecordPayload(BaseModel):
     notes: str = ""
@@ -211,6 +212,86 @@ def index():
     return FileResponse(os.path.join("static", "index.html"))
 
 # ─── REST API ────────────────────────────────────────────────────────────────
+# ─── Signal Classification API ────────────────────────────────────────────────
+from enum import Enum
+
+class SignalType(str, Enum):
+    FM_BROADCAST = "FM Broadcast"
+    AM_BROADCAST = "AM Broadcast"
+    SHORTWAVE = "Shortwave"
+    CB = "CB Radio"
+    HAM_HF = "Ham Radio (HF)"
+    HAM_VHF = "Ham Radio (VHF)"
+    HAM_UHF = "Ham Radio (UHF)"
+    MARINE_VHF = "Marine VHF"
+    AIRBAND = "Airband"
+    PUBLIC_SAFETY = "Public Safety"
+    GSM = "GSM"
+    LTE = "LTE/4G"
+    GPS = "GPS"
+    WIFI = "WiFi"
+    BLUETOOTH = "Bluetooth"
+    TV_VHF = "VHF TV"
+    TV_UHF = "UHF TV"
+    SATELLITE = "Satellite"
+    RADAR = "Radar"
+    UNKNOWN = "Unknown"
+
+SIGNAL_CLASSIFICATIONS = [
+    {"type": SignalType.AM_BROADCAST, "min_mhz": 0.53, "max_mhz": 1.70, "modulation": "AM", "bandwidth_khz": 10},
+    {"type": SignalType.SHORTWAVE, "min_mhz": 3.00, "max_mhz": 30.00, "modulation": "AM/SSB", "bandwidth_khz": 10},
+    {"type": SignalType.CB, "min_mhz": 26.965, "max_mhz": 27.405, "modulation": "AM", "bandwidth_khz": 10},
+    {"type": SignalType.HAM_HF, "min_mhz": 3.00, "max_mhz": 30.00, "modulation": "Various", "bandwidth_khz": 20},
+    {"type": SignalType.FM_BROADCAST, "min_mhz": 87.50, "max_mhz": 108.00, "modulation": "FM", "bandwidth_khz": 200},
+    {"type": SignalType.AIRBAND, "min_mhz": 118.00, "max_mhz": 137.00, "modulation": "AM", "bandwidth_khz": 25},
+    {"type": SignalType.MARINE_VHF, "min_mhz": 156.00, "max_mhz": 162.00, "modulation": "FM", "bandwidth_khz": 25},
+    {"type": SignalType.HAM_VHF, "min_mhz": 144.00, "max_mhz": 148.00, "modulation": "Various", "bandwidth_khz": 20},
+    {"type": SignalType.HAM_UHF, "min_mhz": 430.00, "max_mhz": 440.00, "modulation": "Various", "bandwidth_khz": 20},
+    {"type": SignalType.TV_VHF, "min_mhz": 54.00, "max_mhz": 216.00, "modulation": "Analog/Digital", "bandwidth_khz": 6000},
+    {"type": SignalType.PUBLIC_SAFETY, "min_mhz": 150.00, "max_mhz": 174.00, "modulation": "P25/FM", "bandwidth_khz": 12.5},
+    {"type": SignalType.GSM, "min_mhz": 880.00, "max_mhz": 960.00, "modulation": "GMSK", "bandwidth_khz": 200},
+    {"type": SignalType.GSM, "min_mhz": 1710.00, "max_mhz": 1880.00, "modulation": "GMSK", "bandwidth_khz": 200},
+    {"type": SignalType.LTE, "min_mhz": 791.00, "max_mhz": 862.00, "modulation": "OFDM", "bandwidth_khz": 10000},
+    {"type": SignalType.LTE, "min_mhz": 925.00, "max_mhz": 960.00, "modulation": "OFDM", "bandwidth_khz": 10000},
+    {"type": SignalType.LTE, "min_mhz": 2110.00, "max_mhz": 2170.00, "modulation": "OFDM", "bandwidth_khz": 10000},
+    {"type": SignalType.WIFI, "min_mhz": 2412.00, "max_mhz": 2495.00, "modulation": "OFDM", "bandwidth_khz": 20000},
+    {"type": SignalType.WIFI, "min_mhz": 5170.00, "max_mhz": 5825.00, "modulation": "OFDM", "bandwidth_khz": 20000},
+    {"type": SignalType.BLUETOOTH, "min_mhz": 2402.00, "max_mhz": 2480.00, "modulation": "FHSS", "bandwidth_khz": 1000},
+    {"type": SignalType.GPS, "min_mhz": 1575.42, "max_mhz": 1575.42, "modulation": "BPSK", "bandwidth_khz": 2046},
+    {"type": SignalType.SATELLITE, "min_mhz": 137.00, "max_mhz": 138.00, "modulation": "Various", "bandwidth_khz": 100},
+    {"type": SignalType.SATELLITE, "min_mhz": 400.00, "max_mhz": 401.00, "modulation": "Various", "bandwidth_khz": 100},
+    {"type": SignalType.RADAR, "min_mhz": 2700.00, "max_mhz": 3000.00, "modulation": "Pulse/Modulated", "bandwidth_khz": 1000},
+    {"type": SignalType.TV_UHF, "min_mhz": 470.00, "max_mhz": 698.00, "modulation": "Digital", "bandwidth_khz": 6000},
+]
+
+class ClassifyPayload(BaseModel):
+    frequency_hz: float
+
+@app.get("/api/classify")
+def classify_signal(frequency_hz: float):
+    """Classify a signal type based on its center frequency."""
+    freq_mhz = frequency_hz / 1e6
+    best_match = None
+    for entry in SIGNAL_CLASSIFICATIONS:
+        if entry["min_mhz"] <= freq_mhz <= entry["max_mhz"]:
+            best_match = entry
+            break
+    if best_match:
+        return {
+            "frequency_hz": frequency_hz,
+            "signal_type": best_match["type"],
+            "modulation": best_match["modulation"],
+            "typical_bandwidth_khz": best_match["bandwidth_khz"],
+            "confidence": "high"
+        }
+    return {
+        "frequency_hz": frequency_hz,
+        "signal_type": SignalType.UNKNOWN,
+        "modulation": "N/A",
+        "typical_bandwidth_khz": None,
+        "confidence": "low"
+    }
+
 @app.get("/api/status")
 def get_status():
     cfg = sdr_engine._config
@@ -230,7 +311,8 @@ def get_status():
             "sweep_stop_hz": cfg.sweep_stop_hz,
             "sweep_step_hz": cfg.sweep_step_hz,
             "dwell_time_ms": cfg.dwell_time_ms,
-            "threshold_db": signal_processor.threshold_db
+            "threshold_db": signal_processor.threshold_db,
+            "min_snr_db": signal_processor.min_snr_db
         },
         "recording": {
             "active": iq_recorder.is_active,
@@ -268,6 +350,8 @@ def update_config(payload: ConfigPayload):
     
     if payload.threshold_db is not None:
         signal_processor.threshold_db = payload.threshold_db
+    if payload.min_snr_db is not None:
+        signal_processor.min_snr_db = payload.min_snr_db
         
     return get_status()
 

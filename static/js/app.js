@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             spectrum = new SpectrumChart('spectrum-canvas');
             waterfall = new WaterfallChart('waterfall-canvas');
+            // Link waterfall so it follows spectrum zoom/pan
+            spectrum.setWaterfall(waterfall);
+            spectrum.onCopy = classifySignal;
         } catch (err) {
             console.error('Failed to initialize charts:', err);
             if (typeof logDebug === 'function') logDebug('Failed to initialize charts: ' + err.message);
@@ -62,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ampInput = document.getElementById('amp-input');
     const threshInput = document.getElementById('thresh-input');
     const threshVal = document.getElementById('thresh-val');
+    const snrInput = document.getElementById('snr-input');
+    const snrVal = document.getElementById('snr-val');
     
     const btnStart = document.getElementById('btn-start');
     const btnStop = document.getElementById('btn-stop');
@@ -74,11 +79,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnUseGps = document.getElementById('btn-use-gps');
     const btnSetReceiver = document.getElementById('btn-set-receiver');
     const receiverCoordsInput = document.getElementById('receiver-coords-input');
+    const classifyFreqInput = document.getElementById('classify-freq-input');
+    const btnClassify = document.getElementById('btn-classify');
     const debugLog = document.getElementById('debug-log');
     
     const statusText = document.getElementById('status-text');
     const statusIndicator = document.getElementById('status-indicator');
     const detectionsTableBody = document.querySelector('#detections-table tbody');
+    
+    const classificationDisplay = document.getElementById('classification-display');
+    const classificationDetails = document.getElementById('classification-details');
+    const classType = document.getElementById('class-type');
+    const classMod = document.getElementById('class-mod');
+    const classBw = document.getElementById('class-bw');
+    const classConf = document.getElementById('class-conf');
 
     // ─── Debug Logging Helper ───────────────────────────────────────────────
     function logDebug(message) {
@@ -104,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             spectrum.updateData(data.freqs_hz, data.magnitude_db, data.peaks);
-            waterfall.appendData(data.magnitude_db);
+            waterfall.appendData(data.magnitude_db, data.freqs_hz);
         };
         
         ws.onclose = () => {
@@ -226,6 +240,26 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Failed to fetch detections:", e);
         }
     }
+    
+    async function classifySignal(freqHz) {
+        try {
+            const res = await fetch(`/api/classify?frequency_hz=${freqHz}`);
+            const data = await res.json();
+            
+            classificationDisplay.style.display = 'none';
+            classificationDetails.style.display = 'flex';
+            
+            classType.textContent = data.signal_type || 'Unknown';
+            classMod.textContent = data.modulation || 'N/A';
+            classBw.textContent = data.typical_bandwidth_khz ? `${data.typical_bandwidth_khz} kHz` : 'N/A';
+            classConf.textContent = data.confidence === 'high' ? 'High' : 'Low';
+            
+            logDebug(`Classified ${(freqHz/1e6).toFixed(4)} MHz as ${data.signal_type}`);
+        } catch (e) {
+            console.error("Classification failed:", e);
+            logDebug("Classification failed: " + (e.message || e));
+        }
+    }
 
     // ─── Event Listeners ─────────────────────────────────────────────────────
     
@@ -293,6 +327,13 @@ document.addEventListener('DOMContentLoaded', () => {
         updateConfig({ threshold_db: parseFloat(e.target.value) });
     });
     
+    snrInput.addEventListener('input', (e) => {
+        snrVal.innerText = e.target.value;
+    });
+    snrInput.addEventListener('change', (e) => {
+        updateConfig({ min_snr_db: parseFloat(e.target.value) });
+    });
+    
     btnStart.addEventListener('click', async () => {
         await fetch('/api/start', {method: 'POST'});
         fetchStatus();
@@ -314,6 +355,21 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         fetchStatus();
+    });
+    
+    btnClassify.addEventListener('click', async () => {
+        const mhz = parseFloat(classifyFreqInput.value);
+        if (!Number.isFinite(mhz) || mhz <= 0) {
+            logDebug('Invalid frequency for classification');
+            return;
+        }
+        await classifySignal(mhz * 1e6);
+    });
+    
+    classifyFreqInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+            await btnClassify.click();
+        }
     });
     
     btnRefreshDet.addEventListener('click', fetchDetections);

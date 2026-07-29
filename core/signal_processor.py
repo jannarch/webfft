@@ -77,6 +77,7 @@ class SignalProcessor:
 
         # Detection threshold
         self.threshold_db: float = -60.0
+        self.min_snr_db: float = 6.0
 
         # Max-hold buffer
         self._max_hold: Optional[np.ndarray] = None
@@ -158,6 +159,7 @@ class SignalProcessor:
         result: SpectrumResult,
         threshold_dbm: float,
         min_separation_hz: float = 50_000,
+        min_snr_db: float = None,
     ) -> List[SignalPeak]:
         """
         Return detected signal peaks above *threshold_dbm*.
@@ -168,6 +170,8 @@ class SignalProcessor:
         threshold_dbm    : Minimum power level to report a peak.
         min_separation_hz: Minimum distance between adjacent peaks (prevents
                            reporting many bins of the same signal).
+        min_snr_db       : Minimum SNR above noise floor. If None, uses
+                           self.min_snr_db.
         """
         power = result.power_dbm
         freqs = result.frequencies_hz
@@ -197,6 +201,11 @@ class SignalProcessor:
                 peak_freq = float(freqs[peak_bin])
                 bandwidth = (peak_end - peak_start) * bin_width_hz
                 snr = peak_power - result.noise_floor_dbm
+                if min_snr_db is None:
+                    min_snr_db = self.min_snr_db
+                if snr < min_snr_db:
+                    continue
+
 
                 # Enforce minimum separation
                 if peaks and abs(peak_freq - peaks[-1].frequency_hz) < min_separation_hz:
