@@ -58,12 +58,13 @@ class SDRConfig:
 
 class _SimSignal:
     """One persistent simulated carrier."""
-    def __init__(self, freq_offset_hz: float, power_lin: float, bw_hz: float = 100e3, is_fm: bool = False):
+    def __init__(self, freq_offset_hz: float, power_lin: float, bw_hz: float = 100e3, is_fm: bool = False, is_am: bool = False):
         self.freq_offset = freq_offset_hz
         self.power = power_lin
         self.bw = bw_hz
         self.phase = random.uniform(0, 2 * math.pi)
         self.is_fm = is_fm
+        self.is_am = is_am
 
 
 class SimulationEngine:
@@ -83,7 +84,8 @@ class SimulationEngine:
         self._persistent_signals = [
             # The primary signal at 0 offset is a simulated FM broadcast with a 1kHz tone (75kHz deviation)
             _SimSignal(freq_offset_hz=0,       power_lin=10 ** ((-55-30)/10), bw_hz=200e3, is_fm=True),
-            _SimSignal(freq_offset_hz=600e3,   power_lin=10 ** ((-65-30)/10), bw_hz=80e3),
+            # The secondary signal at 600kHz is a simulated AM broadcast with a 400Hz tone
+            _SimSignal(freq_offset_hz=600e3,   power_lin=10 ** ((-45-30)/10), bw_hz=80e3, is_am=True),
             _SimSignal(freq_offset_hz=-400e3,  power_lin=10 ** ((-70-30)/10), bw_hz=120e3),
         ]
 
@@ -107,6 +109,11 @@ class SimulationEngine:
                 fm_mod = 75e3 / 1e3 * np.sin(2 * math.pi * 1000 * chunk_t_global)
                 carrier = np.exp(1j * (2 * math.pi * sig.freq_offset * t + sig.phase + fm_mod)).astype(np.complex64)
                 samples += (amp * carrier).astype(np.complex64)
+            elif sig.is_am:
+                # 400Hz tone, 80% modulation depth
+                am_mod = 1.0 + 0.8 * np.sin(2 * math.pi * 400 * chunk_t_global)
+                carrier = np.exp(1j * (2 * math.pi * sig.freq_offset * t + sig.phase)).astype(np.complex64)
+                samples += (amp * am_mod * carrier).astype(np.complex64)
             else:
                 # slight AM modulation for realism
                 am = 1.0 + 0.15 * np.sin(2 * math.pi * 400 * t)

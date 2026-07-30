@@ -15,9 +15,10 @@ class AudioDemodulator:
         # State across chunks
         self._last_phase = 0.0
 
-    def demodulate_fm(self, samples: np.ndarray, sample_rate_hz: float, target_freq_hz: float, center_freq_hz: float) -> bytes:
+    def demodulate(self, samples: np.ndarray, sample_rate_hz: float, target_freq_hz: float, center_freq_hz: float, mode: str = "FM") -> bytes:
         """
         Processes a chunk of complex IQ samples and returns raw 16-bit PCM audio bytes.
+        Mode can be "FM" or "AM".
         """
         if len(samples) == 0:
             return b""
@@ -41,21 +42,34 @@ class AudioDemodulator:
             
         actual_bb_rate = sample_rate_hz / max(1, decimation_factor)
         
-        # 3. FM Demodulation (Phase differentiation)
-        # Extract phase of current sample relative to previous sample
-        # We prepend the last phase from the previous chunk to maintain continuity
-        angles = np.angle(baseband)
-        
-        if len(angles) > 0:
-            phase_diff = np.diff(np.concatenate(([self._last_phase], angles)))
-            # Unwrap phase difference (wrap to -pi to pi)
-            phase_diff = (phase_diff + np.pi) % (2 * np.pi) - np.pi
-            self._last_phase = angles[-1]
+        # 3. Demodulation
+        if mode.upper() == "AM":
+            # AM Demodulation (Envelope detection)
+            demod = np.abs(baseband)
+            # Remove DC offset (the carrier)
+            demod = demod - np.mean(demod)
+            # Scale
+            gain = 2.0
+            demod = demod * gain
         else:
-            phase_diff = np.array([], dtype=np.float32)
+            # FM Demodulation (Phase differentiation)
+            angles = np.angle(baseband)
             
-        demod = phase_diff
-        
+            if len(angles) > 0:
+                phase_diff = np.diff(np.concatenate(([self._last_phase], angles)))
+                # Unwrap phase difference (wrap to -pi to pi)
+                phase_diff = (phase_diff + np.pi) % (2 * np.pi) - np.pi
+                self._last_phase = angles[-1]
+            else:
+                phase_diff = np.array([], dtype=np.float32)
+                
+            demod = phase_diff
+            
+            # WBFM deviation is typically around 75kHz, so phase diff is bounded.
+            # Normalizing with a fixed gain factor
+            gain = 1.0 / (np.pi / 2.0)
+            demod = demod * gain
+
         # 4. Resample to target audio rate (e.g. 48kHz)
         # We use linear interpolation for speed and simplicity in pure numpy
         n_audio_samples = int(len(demod) * self.target_audio_rate / actual_bb_rate)
@@ -68,10 +82,7 @@ class AudioDemodulator:
         audio = np.interp(x_new, x_old, demod)
         
         # 5. Normalize and convert to 16-bit PCM
-        # WBFM deviation is typically around 75kHz, so phase diff is bounded.
-        # Let's normalize with a fixed gain factor so noise doesn't blow up to 100% volume
-        gain = 1.0 / (np.pi / 2.0)  # rough scaling
-        audio = np.clip(audio * gain, -1.0, 1.0)
+        audio = np.clip(audio, -1.0, 1.0)
         
         audio_int16 = np.int16(audio * 32767)
         return audio_int16.tobytes()

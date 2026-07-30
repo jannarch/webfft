@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const classifyFreqInput = document.getElementById('classify-freq-input');
     const btnClassify = document.getElementById('btn-classify');
     const btnListen = document.getElementById('btn-listen');
+    const audioModeInput = document.getElementById('audio-mode-input');
     const volumeInput = document.getElementById('volume-input');
     const volumeVal = document.getElementById('volume-val');
     const audioControls = document.getElementById('audio-controls');
@@ -495,9 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (audioControls) audioControls.style.display = 'none';
             } else {
                 const freqHz = parseFloat(classifyFreqInput.value) * 1e6;
+                const mode = audioModeInput ? audioModeInput.value : 'FM';
                 if (!isNaN(freqHz)) {
-                    audioPlayer.start(freqHz);
-                    btnListen.innerHTML = '⏹ Stop';
+                    audioPlayer.start(freqHz, mode);
+                    btnListen.innerHTML = `&#9209; Stop (${mode})`;
                     btnListen.classList.replace('btn-primary', 'btn-danger');
                     if (audioControls) audioControls.style.display = 'flex';
                 } else {

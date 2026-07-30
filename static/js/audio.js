@@ -29,7 +29,7 @@ class WebAudioPlayer {
         }
     }
 
-    start(frequencyHz) {
+    start(frequencyHz, mode = 'FM') {
         if (this.isPlaying) this.stop();
         this._initAudio();
         
@@ -38,6 +38,7 @@ class WebAudioPlayer {
         }
 
         this.isPlaying = true;
+        this._mode = mode;
         this.nextStartTime = this.audioCtx.currentTime + 0.1; // Small buffer delay to prevent stutter
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -45,8 +46,8 @@ class WebAudioPlayer {
         this.ws.binaryType = 'arraybuffer';
 
         this.ws.onopen = () => {
-            console.log(`Audio WebSocket connected. Requesting ${frequencyHz} Hz`);
-            this.ws.send(JSON.stringify({ action: "start", freq_hz: frequencyHz }));
+            console.log(`Audio WebSocket connected. Requesting ${frequencyHz} Hz in ${mode} mode`);
+            this.ws.send(JSON.stringify({ action: "start", freq_hz: frequencyHz, mode: mode }));
         };
 
         this.ws.onmessage = (event) => {

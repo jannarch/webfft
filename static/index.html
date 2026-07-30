@@ -151,7 +151,13 @@
                     <label>Freq (MHz)</label>
                     <input type="number" id="classify-freq-input" step="0.1" value="99.0" placeholder="e.g. 99.0">
                     <button id="btn-classify" class="btn btn-ghost btn-sm">Classify</button>
-                    <button id="btn-listen" class="btn btn-primary btn-sm" style="margin-left: 4px;">▶ Listen</button>
+                </div>
+                <div class="form-row" style="margin-top: 6px;">
+                    <select id="audio-mode-input" style="padding: 3px 8px; background: var(--bg-input, #1e2030); color: var(--text-primary, #cdd6f4); border: 1px solid var(--border, #313244); border-radius: 4px; font-size: 0.8rem; flex-shrink: 0;">
+                        <option value="FM">FM</option>
+                        <option value="AM">AM</option>
+                    </select>
+                    <button id="btn-listen" class="btn btn-primary btn-sm" style="margin-left: 6px; flex: 1;">&#9654; Listen</button>
                 </div>
                 <div class="form-row" id="audio-controls" style="display:none; margin-top: 8px;">
                     <label>Volume</label>

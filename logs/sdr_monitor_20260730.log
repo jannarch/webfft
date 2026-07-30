@@ -40,3 +40,54 @@
 2026-07-30 09:55:46 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 12BB2635 [hardware]
 2026-07-30 09:55:46 [INFO    ] sdr_monitor.web_backend (main.py:194): SDR started in [HARDWARE] mode. Session: 12BB2635
 2026-07-30 09:57:15 [INFO    ] sdr_monitor.web_backend (main.py:217): Shutting down Web-SDR Application...
+2026-07-30 10:32:08 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260730.log
+2026-07-30 10:32:08 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-30 10:32:08 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-30 10:32:09 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: A78F528E [simulation]
+2026-07-30 10:32:10 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:217): HackRF One detected and configured.
+2026-07-30 10:32:10 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:451): SDREngine initialized in hardware mode.
+2026-07-30 10:32:10 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: F6925CB7 [hardware]
+2026-07-30 10:32:10 [INFO    ] sdr_monitor.web_backend (main.py:194): SDR started in [HARDWARE] mode. Session: F6925CB7
+2026-07-30 10:32:10 [INFO    ] sdr_monitor.web_backend (main.py:213): Web-SDR Application Started. Session: F6925CB7
+2026-07-30 10:32:21 [INFO    ] sdr_monitor.web_backend (main.py:516): Client disconnected from WebSocket.
+2026-07-30 10:32:48 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:217): HackRF One detected and configured.
+2026-07-30 10:32:48 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:451): SDREngine initialized in hardware mode.
+2026-07-30 10:32:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 371F462E [hardware]
+2026-07-30 10:32:48 [INFO    ] sdr_monitor.web_backend (main.py:194): SDR started in [HARDWARE] mode. Session: 371F462E
+2026-07-30 10:35:13 [INFO    ] sdr_monitor.web_backend (main.py:525): Audio WebSocket client connected.
+2026-07-30 10:35:14 [INFO    ] sdr_monitor.web_backend (main.py:547): Audio streaming started for 97.710533 MHz
+2026-07-30 10:35:19 [INFO    ] sdr_monitor.web_backend (main.py:551): Audio streaming stopped.
+2026-07-30 10:35:19 [INFO    ] sdr_monitor.web_backend (main.py:553): Audio WebSocket client disconnected.
+2026-07-30 10:39:11 [INFO    ] sdr_monitor.web_backend (main.py:516): Client disconnected from WebSocket.
+2026-07-30 10:39:11 [INFO    ] sdr_monitor.web_backend (main.py:217): Shutting down Web-SDR Application...
+2026-07-30 14:26:49 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260730.log
+2026-07-30 14:26:49 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=2048  window=hann  avg=3
+2026-07-30 14:26:49 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-07-30 14:26:50 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 5CCF3982 [simulation]
+2026-07-30 14:26:50 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-07-30 14:26:50 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-07-30 14:26:51 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: D65DC1B6 [simulation]
+2026-07-30 14:26:51 [INFO    ] sdr_monitor.web_backend (main.py:195): SDR started in [SIMULATION] mode. Session: D65DC1B6
+2026-07-30 14:26:51 [INFO    ] sdr_monitor.web_backend (main.py:214): Web-SDR Application Started. Session: D65DC1B6
+2026-07-30 14:27:34 [INFO    ] sdr_monitor.web_backend (main.py:517): Client disconnected from WebSocket.
+2026-07-30 14:35:19 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-07-30 14:35:19 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-07-30 14:35:19 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: DBA23C86 [hardware]
+2026-07-30 14:35:19 [INFO    ] sdr_monitor.web_backend (main.py:422): Hardware reload requested; engine now in hardware mode.
+2026-07-30 14:35:20 [INFO    ] sdr_monitor.web_backend (main.py:517): Client disconnected from WebSocket.
+2026-07-30 14:35:42 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-07-30 14:35:42 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-07-30 14:35:42 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 151F425D [hardware]
+2026-07-30 14:35:42 [INFO    ] sdr_monitor.web_backend (main.py:195): SDR started in [HARDWARE] mode. Session: 151F425D
+2026-07-30 14:37:26 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-07-30 14:37:26 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-07-30 14:37:26 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 49159DE1 [hardware]
+2026-07-30 14:37:26 [INFO    ] sdr_monitor.web_backend (main.py:195): SDR started in [HARDWARE] mode. Session: 49159DE1
+2026-07-30 14:39:01 [INFO    ] sdr_monitor.web_backend (main.py:526): Audio WebSocket client connected.
+2026-07-30 14:39:01 [INFO    ] sdr_monitor.web_backend (main.py:549): Audio streaming started for 97.694314 MHz in FM mode
+2026-07-30 14:41:08 [INFO    ] sdr_monitor.web_backend (main.py:553): Audio streaming stopped.
+2026-07-30 14:41:08 [INFO    ] sdr_monitor.web_backend (main.py:555): Audio WebSocket client disconnected.
+2026-07-30 14:41:09 [INFO    ] sdr_monitor.web_backend (main.py:526): Audio WebSocket client connected.
+2026-07-30 14:41:09 [INFO    ] sdr_monitor.web_backend (main.py:549): Audio streaming started for 97.694314 MHz in FM mode
+2026-07-30 14:41:17 [INFO    ] sdr_monitor.web_backend (main.py:553): Audio streaming stopped.
+2026-07-30 14:41:17 [INFO    ] sdr_monitor.web_backend (main.py:555): Audio WebSocket client disconnected.

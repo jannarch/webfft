@@ -51,6 +51,7 @@ localization_points: List[Dict[str, Any]] = []
 # Audio State
 audio_demod = AudioDemodulator()
 audio_target_freq_hz: Optional[float] = None
+audio_mode: str = "FM"
 audio_queues: List[asyncio.Queue] = []
 audio_loop: Optional[asyncio.AbstractEventLoop] = None
 
@@ -112,7 +113,7 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
     # Process Audio if anyone is listening
     if audio_target_freq_hz is not None and len(audio_queues) > 0 and audio_loop is not None:
         try:
-            pcm_bytes = audio_demod.demodulate_fm(samples, sample_rate_hz, audio_target_freq_hz, center_hz)
+            pcm_bytes = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
             if pcm_bytes:
                 for q in list(audio_queues):
                     # We keep the queue size small so it doesn't build up massive latency
@@ -520,7 +521,7 @@ async def ws_spectrum(websocket: WebSocket):
 
 @app.websocket("/ws/audio")
 async def ws_audio(websocket: WebSocket):
-    global audio_target_freq_hz
+    global audio_target_freq_hz, audio_mode
     await websocket.accept()
     logger.info("Audio WebSocket client connected.")
     
@@ -544,7 +545,8 @@ async def ws_audio(websocket: WebSocket):
             action = msg.get("action")
             if action == "start":
                 audio_target_freq_hz = float(msg.get("freq_hz", 99e6))
-                logger.info(f"Audio streaming started for {audio_target_freq_hz / 1e6} MHz")
+                audio_mode = msg.get("mode", "FM")
+                logger.info(f"Audio streaming started for {audio_target_freq_hz / 1e6} MHz in {audio_mode} mode")
             elif action == "stop":
                 # Only stop if it's the current target (in a real multi-user setup we'd be more careful)
                 audio_target_freq_hz = None
