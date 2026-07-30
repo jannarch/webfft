@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let spectrum = null;
         let waterfall = null;
         let map = null;
+        let audioPlayer = null;
+        
         let receiverLocation = { lat: -6.2088, lng: 106.8456 };
         function applyReceiverLocation(lat, lng) {
             receiverLocation = { lat, lng };
@@ -52,6 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof logDebug === 'function') logDebug('Failed to initialize map: ' + err.message);
         }
 
+        try {
+            audioPlayer = new WebAudioPlayer(48000);
+        } catch (err) {
+            console.error('Failed to initialize audio player:', err);
+            if (typeof logDebug === 'function') logDebug('Failed to initialize audio player: ' + err.message);
+        }
+
     // ─── DOM Elements ────────────────────────────────────────────────────────
     const startFreqInput = document.getElementById('start-freq-input');
     const stopFreqInput = document.getElementById('stop-freq-input');
@@ -81,6 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const receiverCoordsInput = document.getElementById('receiver-coords-input');
     const classifyFreqInput = document.getElementById('classify-freq-input');
     const btnClassify = document.getElementById('btn-classify');
+    const btnListen = document.getElementById('btn-listen');
+    const volumeInput = document.getElementById('volume-input');
+    const volumeVal = document.getElementById('volume-val');
+    const audioControls = document.getElementById('audio-controls');
     const debugLog = document.getElementById('debug-log');
     
     const statusText = document.getElementById('status-text');
@@ -471,6 +484,36 @@ document.addEventListener('DOMContentLoaded', () => {
             btnReload.innerText = 'Reload Hardware';
         }
     });
+
+    // Audio Playback
+    if (btnListen && audioPlayer) {
+        btnListen.addEventListener('click', () => {
+            if (audioPlayer.isPlaying) {
+                audioPlayer.stop();
+                btnListen.innerHTML = '▶ Listen';
+                btnListen.classList.replace('btn-danger', 'btn-primary');
+                if (audioControls) audioControls.style.display = 'none';
+            } else {
+                const freqHz = parseFloat(classifyFreqInput.value) * 1e6;
+                if (!isNaN(freqHz)) {
+                    audioPlayer.start(freqHz);
+                    btnListen.innerHTML = '⏹ Stop';
+                    btnListen.classList.replace('btn-primary', 'btn-danger');
+                    if (audioControls) audioControls.style.display = 'flex';
+                } else {
+                    alert("Please enter a valid frequency to listen to.");
+                }
+            }
+        });
+    }
+
+    if (volumeInput && audioPlayer) {
+        volumeInput.addEventListener('input', (e) => {
+            const vol = parseFloat(e.target.value);
+            audioPlayer.setVolume(vol);
+            if (volumeVal) volumeVal.innerText = Math.round(vol * 100) + '%';
+        });
+    }
 
     // ─── Boot ────────────────────────────────────────────────────────────────
     connectWebSocket();

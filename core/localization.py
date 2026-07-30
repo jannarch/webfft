@@ -21,8 +21,6 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import numpy as np
-from scipy.optimize import minimize
-from scipy.signal import correlate
 
 from utils.logger import get_logger
 
@@ -63,6 +61,35 @@ def xy_to_latlon(ref_lat: float, ref_lon: float, x: float, y: float) -> Tuple[fl
     lon = ref_lon + math.degrees(x / (EARTH_RADIUS_M * math.cos(math.radians(ref_lat))))
     return lat, lon
 
+def _minimize(cost_func, x0, max_iter=5000, lr=1.0, tol=1e-3):
+    """Simple gradient descent with adaptive learning rate to replace scipy.optimize.minimize."""
+    x = np.array(x0, dtype=float)
+    h = 1e-5
+    for _ in range(max_iter):
+        c = cost_func(x)
+        grad = np.zeros_like(x)
+        for i in range(len(x)):
+            x_plus = x.copy()
+            x_plus[i] += h
+            grad[i] = (cost_func(x_plus) - c) / h
+            
+        if np.linalg.norm(grad) < 1e-9: break
+        
+        step = lr * grad
+        if np.linalg.norm(step) < tol: break
+            
+        x -= step
+        if cost_func(x) > c:
+            x += step  # revert
+            lr *= 0.5
+        else:
+            lr *= 1.1
+            
+    class Result:
+        def __init__(self, x_val):
+            self.x = x_val
+            self.success = True
+    return Result(x)
 
 # ── Measurement point ──────────────────────────────────────────────────────────
 
@@ -188,8 +215,7 @@ class RSSILocalizer:
                 total += (d_est - d_meas) ** 2
             return total
 
-        result = minimize(cost, [x0, y0], method="Nelder-Mead",
-                          options={"xatol": 1.0, "fatol": 1.0, "maxiter": 5000})
+        result = _minimize(cost, [x0, y0], max_iter=5000)
         px, py = result.x
         tx_lat, tx_lon = xy_to_latlon(ref_lat, ref_lon, px, py)
 
@@ -255,7 +281,7 @@ class TDOALocalizer:
             if i == reference_idx:
                 tdoas.append(0.0)
                 continue
-            corr = correlate(sig, ref, mode="full")
+            corr = np.correlate(sig, ref, mode="full")
             lag = int(np.argmax(np.abs(corr))) - (len(ref) - 1)
             tdoas.append(lag / sample_rate_hz)
         return tdoas
@@ -292,8 +318,7 @@ class TDOALocalizer:
 
         x0 = np.mean([p[0] for p in rx_xy])
         y0 = np.mean([p[1] for p in rx_xy])
-        result = minimize(cost, [x0, y0], method="Nelder-Mead",
-                          options={"xatol": 1.0, "fatol": 1.0, "maxiter": 10000})
+        result = _minimize(cost, [x0, y0], max_iter=10000)
         px, py = result.x
         tx_lat, tx_lon = xy_to_latlon(ref_lat, ref_lon, px, py)
 

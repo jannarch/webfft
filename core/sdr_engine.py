@@ -58,11 +58,12 @@ class SDRConfig:
 
 class _SimSignal:
     """One persistent simulated carrier."""
-    def __init__(self, freq_offset_hz: float, power_lin: float, bw_hz: float = 100e3):
+    def __init__(self, freq_offset_hz: float, power_lin: float, bw_hz: float = 100e3, is_fm: bool = False):
         self.freq_offset = freq_offset_hz
         self.power = power_lin
         self.bw = bw_hz
         self.phase = random.uniform(0, 2 * math.pi)
+        self.is_fm = is_fm
 
 
 class SimulationEngine:
@@ -80,7 +81,8 @@ class SimulationEngine:
     def _setup_default_signals(self):
         """Pre-populate with a few 'always-on' signals."""
         self._persistent_signals = [
-            _SimSignal(freq_offset_hz=0,       power_lin=10 ** ((-55-30)/10), bw_hz=200e3),
+            # The primary signal at 0 offset is a simulated FM broadcast with a 1kHz tone (75kHz deviation)
+            _SimSignal(freq_offset_hz=0,       power_lin=10 ** ((-55-30)/10), bw_hz=200e3, is_fm=True),
             _SimSignal(freq_offset_hz=600e3,   power_lin=10 ** ((-65-30)/10), bw_hz=80e3),
             _SimSignal(freq_offset_hz=-400e3,  power_lin=10 ** ((-70-30)/10), bw_hz=120e3),
         ]
@@ -94,12 +96,23 @@ class SimulationEngine:
                    + 1j * np.random.normal(0, noise_std, n_samples).astype(np.float32))
 
         # Persistent signals
+        # Add a time tracker for continuous FM phase across chunks
+        self._time_acc += n_samples / sample_rate_hz
+        chunk_t_global = np.arange(n_samples, dtype=np.float32) / sample_rate_hz + (self._time_acc - n_samples / sample_rate_hz)
+        
         for sig in self._persistent_signals:
             amp = math.sqrt(sig.power)
-            # slight AM modulation for realism
-            am = 1.0 + 0.15 * np.sin(2 * math.pi * 400 * t)
-            carrier = np.exp(1j * (2 * math.pi * sig.freq_offset * t + sig.phase)).astype(np.complex64)
-            samples += (amp * am * carrier).astype(np.complex64)
+            if sig.is_fm:
+                # 1kHz tone, 75kHz deviation
+                fm_mod = 75e3 / 1e3 * np.sin(2 * math.pi * 1000 * chunk_t_global)
+                carrier = np.exp(1j * (2 * math.pi * sig.freq_offset * t + sig.phase + fm_mod)).astype(np.complex64)
+                samples += (amp * carrier).astype(np.complex64)
+            else:
+                # slight AM modulation for realism
+                am = 1.0 + 0.15 * np.sin(2 * math.pi * 400 * t)
+                carrier = np.exp(1j * (2 * math.pi * sig.freq_offset * t + sig.phase)).astype(np.complex64)
+                samples += (amp * am * carrier).astype(np.complex64)
+                
             sig.phase += 2 * math.pi * sig.freq_offset * (n_samples / sample_rate_hz)
             sig.phase %= (2 * math.pi)
 
@@ -214,6 +227,7 @@ class SDRWorker(threading.Thread):
             self._config.center_frequency_hz = freq_hz
             if self._mode == SDRMode.HARDWARE and self._sdr is not None:
                 try:
+                    # pyrefly: ignore [missing-import]
                     import SoapySDR
                     self._sdr.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, freq_hz)
                 except Exception as e:
@@ -226,6 +240,7 @@ class SDRWorker(threading.Thread):
             self._config.amp_enabled = amp
             if self._mode == SDRMode.HARDWARE and self._sdr is not None:
                 try:
+                    # pyrefly: ignore [missing-import]
                     import SoapySDR
                     self._sdr.setGain(SoapySDR.SOAPY_SDR_RX, 0, "LNA", lna)
                     self._sdr.setGain(SoapySDR.SOAPY_SDR_RX, 0, "VGA", vga)
@@ -238,6 +253,7 @@ class SDRWorker(threading.Thread):
             self._config.sample_rate_hz = sr_hz
             if self._mode == SDRMode.HARDWARE and self._sdr is not None:
                 try:
+                    # pyrefly: ignore [missing-import]
                     import SoapySDR
                     self._sdr.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, sr_hz)
                 except Exception as e:
@@ -264,7 +280,9 @@ class SDRWorker(threading.Thread):
 
     def _run_hardware(self):
         try:
+            # pyrefly: ignore [missing-import]
             import SoapySDR
+            # pyrefly: ignore [missing-import]
             from SoapySDR import SOAPY_SDR_RX, SOAPY_SDR_CF32
 
             self._rx_stream = self._sdr.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32)
@@ -346,6 +364,7 @@ class SDRWorker(threading.Thread):
     # ── Helpers ────────────────────────────────────────────────────────────────
 
     def _apply_hardware_config(self):
+        # pyrefly: ignore [missing-import]
         import SoapySDR
         sdr = self._sdr
         sdr.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, self._config.sample_rate_hz)

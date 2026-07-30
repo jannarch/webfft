@@ -15,6 +15,7 @@ from core.sdr_engine import SDREngine, SDRConfig, ScanMode
 from core.signal_processor import SignalProcessor
 from core.iq_recorder import IQRecorder
 from core.localization import MeasPoint, PathLossModel, RSSILocalizer
+from core.audio_demodulator import AudioDemodulator
 from database.db_manager import DatabaseManager
 from database.models import Detection
 from utils.logger import setup_logger, get_logger
@@ -46,6 +47,12 @@ _session_id: str = None
 latest_frame: Dict[str, Any] = {}
 frame_lock = threading.Lock()
 localization_points: List[Dict[str, Any]] = []
+
+# Audio State
+audio_demod = AudioDemodulator()
+audio_target_freq_hz: Optional[float] = None
+audio_queues: List[asyncio.Queue] = []
+audio_loop: Optional[asyncio.AbstractEventLoop] = None
 
 # Models
 class ConfigPayload(BaseModel):
@@ -101,6 +108,18 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
             notes="Auto-detected"
         )
         db_manager.save_detection(detection)
+
+    # Process Audio if anyone is listening
+    if audio_target_freq_hz is not None and len(audio_queues) > 0 and audio_loop is not None:
+        try:
+            pcm_bytes = audio_demod.demodulate_fm(samples, sample_rate_hz, audio_target_freq_hz, center_hz)
+            if pcm_bytes:
+                for q in list(audio_queues):
+                    # We keep the queue size small so it doesn't build up massive latency
+                    if q.qsize() < 10:
+                        audio_loop.call_soon_threadsafe(q.put_nowait, pcm_bytes)
+        except Exception as e:
+            logger.error(f"Audio demodulation error: {e}")
         
     # Update latest frame for WebSockets
     with frame_lock:
@@ -176,7 +195,8 @@ def _init_and_start_sdr():
 
 @app.on_event("startup")
 def startup_event():
-    global _session_id
+    global _session_id, audio_loop
+    audio_loop = asyncio.get_event_loop()
     os.makedirs("static", exist_ok=True)
 
     # Create initial session
@@ -497,3 +517,46 @@ async def ws_spectrum(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
         await websocket.close()
+
+@app.websocket("/ws/audio")
+async def ws_audio(websocket: WebSocket):
+    global audio_target_freq_hz
+    await websocket.accept()
+    logger.info("Audio WebSocket client connected.")
+    
+    q = asyncio.Queue()
+    audio_queues.append(q)
+    
+    # Task to consume from the queue and send to the client
+    async def send_audio():
+        try:
+            while True:
+                data = await q.get()
+                await websocket.send_bytes(data)
+        except Exception as e:
+            logger.error(f"Audio send task error: {e}")
+
+    send_task = asyncio.create_task(send_audio())
+    
+    try:
+        while True:
+            msg = await websocket.receive_json()
+            action = msg.get("action")
+            if action == "start":
+                audio_target_freq_hz = float(msg.get("freq_hz", 99e6))
+                logger.info(f"Audio streaming started for {audio_target_freq_hz / 1e6} MHz")
+            elif action == "stop":
+                # Only stop if it's the current target (in a real multi-user setup we'd be more careful)
+                audio_target_freq_hz = None
+                logger.info("Audio streaming stopped.")
+    except WebSocketDisconnect:
+        logger.info("Audio WebSocket client disconnected.")
+    except Exception as e:
+        logger.error(f"Audio WebSocket receive error: {e}")
+    finally:
+        send_task.cancel()
+        if q in audio_queues:
+            audio_queues.remove(q)
+        # If no more listeners, stop demodulating
+        if len(audio_queues) == 0:
+            audio_target_freq_hz = None
