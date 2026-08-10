@@ -8,6 +8,12 @@ class WebAudioPlayer {
         this.isPlaying = false;
         this.nextStartTime = 0;
         this.volume = 0.5;
+
+        // Jitter buffer: queue chunks and play with a slight delay
+        this._jitterBuffer = [];
+        this._jitterDelayMs = 80;  // 80ms buffer to smooth out WebSocket delivery jitter
+        this._jitterStarted = false;
+        this._drainInterval = null;
     }
 
     _initAudio() {
@@ -39,7 +45,9 @@ class WebAudioPlayer {
 
         this.isPlaying = true;
         this._mode = mode;
-        this.nextStartTime = this.audioCtx.currentTime + 0.1; // Small buffer delay to prevent stutter
+        this._jitterBuffer = [];
+        this._jitterStarted = false;
+        this.nextStartTime = 0;
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/audio`);
@@ -52,7 +60,18 @@ class WebAudioPlayer {
 
         this.ws.onmessage = (event) => {
             if (!this.isPlaying) return;
-            this._scheduleAudioChunk(event.data);
+            // Push into the jitter buffer instead of playing immediately
+            this._jitterBuffer.push(event.data);
+
+            // Once we've accumulated enough buffer, start draining
+            if (!this._jitterStarted) {
+                const chunksNeeded = Math.max(2, Math.ceil(this._jitterDelayMs / 20));
+                if (this._jitterBuffer.length >= chunksNeeded) {
+                    this._jitterStarted = true;
+                    this.nextStartTime = this.audioCtx.currentTime + (this._jitterDelayMs / 1000);
+                    this._startDraining();
+                }
+            }
         };
 
         this.ws.onclose = () => {
@@ -61,8 +80,31 @@ class WebAudioPlayer {
         };
     }
 
+    _startDraining() {
+        // Drain the jitter buffer at a regular interval (~20ms)
+        if (this._drainInterval) clearInterval(this._drainInterval);
+        this._drainInterval = setInterval(() => {
+            if (!this.isPlaying) {
+                clearInterval(this._drainInterval);
+                this._drainInterval = null;
+                return;
+            }
+            // Schedule all queued chunks
+            while (this._jitterBuffer.length > 0) {
+                const chunk = this._jitterBuffer.shift();
+                this._scheduleAudioChunk(chunk);
+            }
+        }, 20);
+    }
+
     stop() {
         this.isPlaying = false;
+        this._jitterBuffer = [];
+        this._jitterStarted = false;
+        if (this._drainInterval) {
+            clearInterval(this._drainInterval);
+            this._drainInterval = null;
+        }
         if (this.ws) {
             if (this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({ action: "stop" }));
@@ -89,10 +131,9 @@ class WebAudioPlayer {
         source.buffer = audioBuffer;
         source.connect(this.gainNode);
 
-        // Schedule playback
+        // Schedule playback — if we fell behind, reset with a small gap
         if (this.nextStartTime < this.audioCtx.currentTime) {
-            // We underran (starved), reset the clock
-            this.nextStartTime = this.audioCtx.currentTime + 0.05;
+            this.nextStartTime = this.audioCtx.currentTime + 0.01;
         }
 
         source.start(this.nextStartTime);

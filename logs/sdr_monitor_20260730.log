@@ -91,3 +91,11 @@
 2026-07-30 14:41:09 [INFO    ] sdr_monitor.web_backend (main.py:549): Audio streaming started for 97.694314 MHz in FM mode
 2026-07-30 14:41:17 [INFO    ] sdr_monitor.web_backend (main.py:553): Audio streaming stopped.
 2026-07-30 14:41:17 [INFO    ] sdr_monitor.web_backend (main.py:555): Audio WebSocket client disconnected.
+2026-07-30 15:47:07 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-07-30 15:47:07 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-07-30 15:47:07 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 6AFBFE5C [hardware]
+2026-07-30 15:47:07 [INFO    ] sdr_monitor.web_backend (main.py:195): SDR started in [HARDWARE] mode. Session: 6AFBFE5C
+2026-07-30 15:47:39 [INFO    ] sdr_monitor.web_backend (main.py:526): Audio WebSocket client connected.
+2026-07-30 15:47:39 [INFO    ] sdr_monitor.web_backend (main.py:549): Audio streaming started for 97.694314 MHz in FM mode
+2026-07-30 15:47:47 [INFO    ] sdr_monitor.web_backend (main.py:553): Audio streaming stopped.
+2026-07-30 15:47:47 [INFO    ] sdr_monitor.web_backend (main.py:555): Audio WebSocket client disconnected.
