@@ -1,0 +1,9 @@
+2026-08-12 11:03:20 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260812.log
+2026-08-12 11:03:20 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-08-12 11:03:20 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-08-12 11:03:21 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: D0FED344 [simulation]
+2026-08-12 11:03:25 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-12 11:03:25 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-12 11:03:26 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: C17E831C [simulation]
+2026-08-12 11:03:26 [INFO    ] sdr_monitor.web_backend (main.py:196): SDR started in [SIMULATION] mode. Session: C17E831C
+2026-08-12 11:03:26 [INFO    ] sdr_monitor.web_backend (main.py:215): Web-SDR Application Started. Session: C17E831C

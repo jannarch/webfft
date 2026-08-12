@@ -29,9 +29,20 @@ class SpectrumChart {
         // Copy callback
         this.onCopy = null;
 
+        this._needsRedraw = false;
+        this._animate();
+
         this._bindInteraction();
         window.addEventListener('resize', () => this.resize());
         this.resize();
+    }
+
+    _animate() {
+        if (this._needsRedraw) {
+            this._draw();
+            this._needsRedraw = false;
+        }
+        requestAnimationFrame(() => this._animate());
     }
 
     // Link a WaterfallChart so it follows this view
@@ -287,6 +298,10 @@ class SpectrumChart {
     // ── Draw ─────────────────────────────────────────────────────────────────
 
     draw() {
+        this._needsRedraw = true;
+    }
+
+    _draw() {
         const w = this.canvas.width;
         const h = this.canvas.height;
         const ctx = this.ctx;
@@ -354,9 +369,44 @@ class SpectrumChart {
         ctx.textAlign = 'right';
         ctx.fillText(`${this.threshold} dBm`, w - 4, threshY - 3);
 
-        // ── Spectrum fill ──────────────────────────────────────────────────
+        // ── Spectrum fill & line ───────────────────────────────────────────
         const visStart = Math.max(0, Math.round(((fMin - this.freqs[0]) / (this.freqs[this.freqs.length-1] - this.freqs[0])) * (this.freqs.length - 1)));
         const visEnd   = Math.min(this.freqs.length - 1, Math.round(((fMax - this.freqs[0]) / (this.freqs[this.freqs.length-1] - this.freqs[0])) * (this.freqs.length - 1)));
+
+        // Decimate data to match canvas width
+        const decimatedPoints = [];
+        const numBins = visEnd - visStart + 1;
+        if (numBins > w * 1.5) {
+            for (let pixelX = 0; pixelX < w; pixelX++) {
+                const startBin = visStart + Math.floor((pixelX / w) * numBins);
+                const endBin = visStart + Math.floor(((pixelX + 1) / w) * numBins);
+                let maxVal = -Infinity;
+                let maxIdx = startBin;
+                for (let b = startBin; b < endBin && b < this.mags.length; b++) {
+                    if (this.mags[b] > maxVal) {
+                        maxVal = this.mags[b];
+                        maxIdx = b;
+                    }
+                }
+                if (maxVal !== -Infinity) {
+                    decimatedPoints.push({
+                        x: pixelX,
+                        y: this._dbToY(maxVal),
+                        freq: this.freqs[maxIdx],
+                        mag: maxVal
+                    });
+                }
+            }
+        } else {
+            for (let i = visStart; i <= visEnd; i++) {
+                decimatedPoints.push({
+                    x: this._freqToX(this.freqs[i]),
+                    y: this._dbToY(this.mags[i]),
+                    freq: this.freqs[i],
+                    mag: this.mags[i]
+                });
+            }
+        }
 
         // Gradient fill
         const grad = ctx.createLinearGradient(0, 0, 0, h);
@@ -365,18 +415,14 @@ class SpectrumChart {
         grad.addColorStop(1,   'rgba(61,139,255,0)');
 
         ctx.beginPath();
-        let first = true;
-        for (let i = visStart; i <= visEnd; i++) {
-            const x = this._freqToX(this.freqs[i]);
-            const y = this._dbToY(this.mags[i]);
-            if (first) { ctx.moveTo(x, y); first = false; }
-            else ctx.lineTo(x, y);
+        if (decimatedPoints.length > 0) {
+            ctx.moveTo(decimatedPoints[0].x, decimatedPoints[0].y);
+            for (let i = 1; i < decimatedPoints.length; i++) {
+                ctx.lineTo(decimatedPoints[i].x, decimatedPoints[i].y);
+            }
+            ctx.lineTo(decimatedPoints[decimatedPoints.length - 1].x, h);
+            ctx.lineTo(decimatedPoints[0].x, h);
         }
-        // Close path for fill
-        const lastX = this._freqToX(this.freqs[Math.min(visEnd, this.freqs.length-1)]);
-        const firstX = this._freqToX(this.freqs[visStart]);
-        ctx.lineTo(lastX, h);
-        ctx.lineTo(firstX, h);
         ctx.closePath();
         ctx.fillStyle = grad;
         ctx.fill();
@@ -385,12 +431,11 @@ class SpectrumChart {
         ctx.beginPath();
         ctx.strokeStyle = '#3d8bff';
         ctx.lineWidth = 1.5;
-        first = true;
-        for (let i = visStart; i <= visEnd; i++) {
-            const x = this._freqToX(this.freqs[i]);
-            const y = this._dbToY(this.mags[i]);
-            if (first) { ctx.moveTo(x, y); first = false; }
-            else ctx.lineTo(x, y);
+        if (decimatedPoints.length > 0) {
+            ctx.moveTo(decimatedPoints[0].x, decimatedPoints[0].y);
+            for (let i = 1; i < decimatedPoints.length; i++) {
+                ctx.lineTo(decimatedPoints[i].x, decimatedPoints[i].y);
+            }
         }
         ctx.stroke();
 

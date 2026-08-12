@@ -43,7 +43,7 @@ class SDRConfig:
     lna_gain: int = 16
     vga_gain: int = 20
     amp_enabled: bool = False
-    fft_size: int = 2048
+    fft_size: int = 1024
     update_rate_hz: float = 25.0
 
     # Sweep parameters

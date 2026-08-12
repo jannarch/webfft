@@ -60,7 +60,7 @@ class SignalProcessor:
 
     def __init__(
         self,
-        fft_size: int = 2048,
+        fft_size: int = 1024,
         window: str = "hann",
         avg_count: int = 3,
     ):

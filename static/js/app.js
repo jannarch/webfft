@@ -124,15 +124,46 @@ document.addEventListener('DOMContentLoaded', () => {
     function connectWebSocket() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         ws = new WebSocket(`${protocol}//${window.location.host}/ws/spectrum`);
+        ws.binaryType = 'arraybuffer';
         
         ws.onopen = () => {
             logDebug("WebSocket connected.");
         };
         
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            spectrum.updateData(data.freqs_hz, data.magnitude_db, data.peaks);
-            waterfall.appendData(data.magnitude_db, data.freqs_hz);
+            if (!(event.data instanceof ArrayBuffer)) {
+                return;
+            }
+            const buffer = event.data;
+            const view = new DataView(buffer);
+            const timestamp = view.getFloat64(0, true);
+            const center_hz = view.getFloat64(8, true);
+            const sample_rate_hz = view.getFloat64(16, true);
+            const num_peaks = view.getUint32(24, true);
+            const num_mags = view.getUint32(28, true);
+            
+            let offset = 32;
+            const peaks = [];
+            for (let i = 0; i < num_peaks; i++) {
+                const freq = view.getFloat64(offset, true);
+                const pwr = view.getFloat64(offset + 8, true);
+                peaks.push({ freq, pwr });
+                offset += 16;
+            }
+            
+            const magnitude_db = new Float32Array(buffer, offset, num_mags);
+            
+            // Reconstruct freqs_hz locally
+            const freqs_hz = new Float64Array(num_mags);
+            const fMin = center_hz - sample_rate_hz / 2;
+            const fMax = center_hz + sample_rate_hz / 2;
+            const step = (fMax - fMin) / Math.max(1, num_mags - 1);
+            for (let i = 0; i < num_mags; i++) {
+                freqs_hz[i] = fMin + i * step;
+            }
+            
+            spectrum.updateData(freqs_hz, magnitude_db, peaks);
+            waterfall.appendData(magnitude_db, freqs_hz);
         };
         
         ws.onclose = () => {

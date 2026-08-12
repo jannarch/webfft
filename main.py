@@ -3,6 +3,8 @@ import os
 import time
 import logging
 import threading
+import struct
+import numpy as np
 from typing import Dict, Any, List, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -129,18 +131,17 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
             "timestamp": timestamp,
             "center_hz": center_hz,
             "sample_rate_hz": sample_rate_hz,
-            "freqs_hz": result.frequencies_hz.tolist(),
-            "magnitude_db": result.power_dbm.tolist(),
+            "magnitude_db": result.power_dbm,  # Keep as numpy array
             "peaks": [{"freq": p.frequency_hz, "pwr": p.power_dbm} for p in peaks]
         }
 
 def _get_latest_rssi_dbm() -> float:
     with frame_lock:
         frame = latest_frame.copy()
-    mags = frame.get("magnitude_db", [])
-    if not mags:
+    mags = frame.get("magnitude_db", None)
+    if mags is None or len(mags) == 0:
         return -120.0
-    return float(max(mags))
+    return float(np.max(mags))
 
 
 def _estimate_localization_result() -> Dict[str, Any]:
@@ -492,6 +493,34 @@ def get_localization_estimate():
     """Get the current RSSI trilateration estimate from captured points."""
     return _estimate_localization_result()
 
+def pack_spectrum_frame(frame: dict) -> bytes:
+    """Pack spectrum frame into binary format.
+    Header: timestamp (d), center_hz (d), sample_rate_hz (d), num_peaks (I), num_mags (I) (32 bytes)
+    Peaks: num_peaks * (freq: d, pwr: d) (num_peaks * 16 bytes)
+    Magnitudes: num_mags * float32 (num_mags * 4 bytes)
+    """
+    ts = float(frame.get("timestamp", 0.0))
+    center = float(frame.get("center_hz", 0.0))
+    sr = float(frame.get("sample_rate_hz", 0.0))
+    peaks = frame.get("peaks", [])
+    mags = frame.get("magnitude_db", None)
+    
+    if mags is None:
+        mags = np.array([], dtype=np.float32)
+    else:
+        mags = np.asarray(mags, dtype=np.float32)
+        
+    num_peaks = len(peaks)
+    num_mags = len(mags)
+    
+    header = struct.pack('<dddII', ts, center, sr, num_peaks, num_mags)
+    
+    peaks_bytes = bytearray()
+    for p in peaks:
+        peaks_bytes.extend(struct.pack('<dd', float(p.get("freq", 0.0)), float(p.get("pwr", 0.0))))
+        
+    return bytes(header) + bytes(peaks_bytes) + mags.tobytes()
+
 # ─── WebSocket ───────────────────────────────────────────────────────────────
 @app.websocket("/ws/spectrum")
 async def ws_spectrum(websocket: WebSocket):
@@ -510,7 +539,8 @@ async def ws_spectrum(websocket: WebSocket):
                 
             ts = frame.get("timestamp", 0)
             if ts != last_sent_ts:
-                await websocket.send_json(frame)
+                binary_data = pack_spectrum_frame(frame)
+                await websocket.send_bytes(binary_data)
                 last_sent_ts = ts
                 
     except WebSocketDisconnect:
