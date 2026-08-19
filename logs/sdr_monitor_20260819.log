@@ -1,0 +1,63 @@
+2026-08-19 09:22:30 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260819.log
+2026-08-19 09:22:30 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-08-19 09:22:30 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-08-19 09:22:31 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 84B3A33E [simulation]
+2026-08-19 09:22:33 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-19 09:22:33 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-19 09:22:33 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: C45453EB [simulation]
+2026-08-19 09:22:33 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [SIMULATION] mode. Session: C45453EB
+2026-08-19 09:22:33 [INFO    ] sdr_monitor.web_backend (main.py:239): Web-SDR Application Started. Session: C45453EB
+2026-08-19 09:25:47 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-19 09:25:47 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-19 09:25:47 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 9034E85C [simulation]
+2026-08-19 09:25:47 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [SIMULATION] mode. Session: 9034E85C
+2026-08-19 09:33:19 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 09:33:19 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 09:33:19 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 4EBD82F2 [hardware]
+2026-08-19 09:33:20 [INFO    ] sdr_monitor.web_backend (main.py:447): Hardware reload requested; engine now in hardware mode.
+2026-08-19 09:33:36 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 09:33:36 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 09:33:36 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 9B463FE1 [hardware]
+2026-08-19 09:33:36 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [HARDWARE] mode. Session: 9B463FE1
+2026-08-19 09:35:47 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 09:36:24 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 09:36:42 [INFO    ] sdr_monitor.web_backend (main.py:243): Shutting down Web-SDR Application...
+2026-08-19 09:37:23 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260819.log
+2026-08-19 09:37:23 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-08-19 09:37:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-08-19 09:37:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 26AAB0D2 [simulation]
+2026-08-19 09:37:24 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 09:37:24 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 09:37:25 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 4C1AE6AB [hardware]
+2026-08-19 09:37:25 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [HARDWARE] mode. Session: 4C1AE6AB
+2026-08-19 09:37:25 [INFO    ] sdr_monitor.web_backend (main.py:239): Web-SDR Application Started. Session: 4C1AE6AB
+2026-08-19 09:47:08 [INFO    ] sdr_monitor.web_backend (main.py:243): Shutting down Web-SDR Application...
+2026-08-19 09:47:56 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260819.log
+2026-08-19 09:47:56 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-08-19 09:47:56 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-08-19 09:47:58 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 84741079 [simulation]
+2026-08-19 09:47:59 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 09:47:59 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 09:48:00 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 37368F05 [hardware]
+2026-08-19 09:48:00 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [HARDWARE] mode. Session: 37368F05
+2026-08-19 09:48:00 [INFO    ] sdr_monitor.web_backend (main.py:239): Web-SDR Application Started. Session: 37368F05
+2026-08-19 09:48:13 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 09:50:01 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 09:51:38 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 09:59:13 [INFO    ] sdr_monitor.web_backend (main.py:243): Shutting down Web-SDR Application...
+2026-08-19 09:59:37 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260819.log
+2026-08-19 09:59:37 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-08-19 09:59:37 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-08-19 09:59:37 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 8A0706E3 [simulation]
+2026-08-19 09:59:38 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 09:59:38 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 09:59:39 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 797ABACD [hardware]
+2026-08-19 09:59:39 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [HARDWARE] mode. Session: 797ABACD
+2026-08-19 09:59:39 [INFO    ] sdr_monitor.web_backend (main.py:239): Web-SDR Application Started. Session: 797ABACD
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in hardware mode.
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 9A7061E0 [hardware]
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [HARDWARE] mode. Session: 9A7061E0
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 10:00:27 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-19 10:01:57 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.

@@ -50,6 +50,11 @@ latest_frame: Dict[str, Any] = {}
 frame_lock = threading.Lock()
 localization_points: List[Dict[str, Any]] = []
 
+# Detection buffer for async DB writes
+_detection_buffer: List[Dict[str, Any]] = []
+_detection_lock = threading.Lock()
+_detection_flush_interval = 0.5  # seconds
+
 # Audio State
 audio_demod = AudioDemodulator()
 audio_target_freq_hz: Optional[float] = None
@@ -91,36 +96,34 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
     if iq_recorder.is_active:
         iq_recorder.write(samples)
         
-    # Save detections to Database
+    # Buffer detections for async DB writes (don't block the real-time path)
     from datetime import datetime
-    for peak in peaks:
-        # Ignore peaks exactly at center frequency (DC spike)
-        if abs(peak.frequency_hz - center_hz) < 1000:
-            continue
-
-        detection = Detection(
-            id=None,
-            frequency_hz=peak.frequency_hz,
-            power_dbm=peak.power_dbm,
-            bandwidth_hz=peak.bandwidth_hz,
-            timestamp=datetime.fromtimestamp(timestamp).isoformat(),
-            duration_ms=0.0,
-            status="active",
-            classification="unknown",
-            session_id=_session_id,
-            notes="Auto-detected"
-        )
-        db_manager.save_detection(detection)
+    with _detection_lock:
+        for peak in peaks:
+            # Ignore peaks exactly at center frequency (DC spike)
+            if abs(peak.frequency_hz - center_hz) < 1000:
+                continue
+            _detection_buffer.append({
+                "frequency_hz": peak.frequency_hz,
+                "power_dbm": peak.power_dbm,
+                "bandwidth_hz": peak.bandwidth_hz,
+                "timestamp": datetime.fromtimestamp(timestamp).isoformat(),
+                "duration_ms": 0.0,
+                "status": "active",
+                "classification": "unknown",
+                "session_id": _session_id,
+                "notes": "Auto-detected"
+            })
 
     # Process Audio if anyone is listening
     if audio_target_freq_hz is not None and len(audio_queues) > 0 and audio_loop is not None:
         try:
-            pcm_bytes = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
-            if pcm_bytes:
+            pcm_chunks = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
+            for chunk in pcm_chunks:
                 for q in list(audio_queues):
                     # We keep the queue size small so it doesn't build up massive latency
                     if q.qsize() < 10:
-                        audio_loop.call_soon_threadsafe(q.put_nowait, pcm_bytes)
+                        audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
         except Exception as e:
             logger.error(f"Audio demodulation error: {e}")
         
@@ -180,6 +183,27 @@ def _estimate_localization_result() -> Dict[str, Any]:
         "residual": result.residual,
         "n_points": result.n_points,
     }
+
+# ─── Detection Flush Thread ──────────────────────────────────────────────────
+def _detection_flush_worker():
+    """Background thread that flushes buffered detections to SQLite."""
+    while True:
+        time.sleep(_detection_flush_interval)
+        with _detection_lock:
+            batch = _detection_buffer
+            _detection_buffer = []
+        if not batch:
+            continue
+        try:
+            for det in batch:
+                db_manager.save_detection(Detection(**det))
+            logger.debug("Flushed %d detections to database.", len(batch))
+        except Exception as e:
+            logger.error("Detection flush error: %s", e)
+
+# Start flush thread on import
+_flush_thread = threading.Thread(target=_detection_flush_worker, daemon=True)
+_flush_thread.start()
 
 # ─── Application Startup & Shutdown ──────────────────────────────────────────
 def _init_and_start_sdr():
@@ -576,10 +600,20 @@ async def ws_audio(websocket: WebSocket):
             if action == "start":
                 audio_target_freq_hz = float(msg.get("freq_hz", 99e6))
                 audio_mode = msg.get("mode", "FM")
+                audio_demod.reset_filter_state()
                 logger.info(f"Audio streaming started for {audio_target_freq_hz / 1e6} MHz in {audio_mode} mode")
             elif action == "stop":
                 # Only stop if it's the current target (in a real multi-user setup we'd be more careful)
                 audio_target_freq_hz = None
+                # Flush any remaining buffered audio
+                try:
+                    remaining = audio_demod.flush()
+                    if remaining:
+                        for q in list(audio_queues):
+                            if q.qsize() < 10:
+                                audio_loop.call_soon_threadsafe(q.put_nowait, remaining)
+                except Exception as e:
+                    logger.error(f"Audio flush error: {e}")
                 logger.info("Audio streaming stopped.")
     except WebSocketDisconnect:
         logger.info("Audio WebSocket client disconnected.")

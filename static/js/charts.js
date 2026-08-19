@@ -7,20 +7,20 @@ class SpectrumChart {
 
         // Data
         this.freqs = [];
-        this.mags  = [];
+        this.mags = [];
         this.peaks = [];
         this.threshold = -70;
 
         // View range in Hz (null = auto from data)
         this.viewStart = null; // Hz
-        this.viewEnd   = null; // Hz
+        this.viewEnd = null; // Hz
         this.minDb = -120;
         this.maxDb = 0;
 
         // Interaction state
         this._drag = null;       // { startX, startViewStart, startViewEnd }
         this._mouseFreq = null;  // Hz at current mouse position
-        this._mousePwr  = null;  // dBm at current mouse position
+        this._mousePwr = null;  // dBm at current mouse position
         this._hoverPeak = null;  // nearest peak within snap radius
 
         // Linked waterfall
@@ -62,7 +62,7 @@ class SpectrumChart {
         if (this.freqs.length < 2) return { fMin: 0, fMax: 1 };
         return {
             fMin: this.viewStart ?? this.freqs[0],
-            fMax: this.viewEnd   ?? this.freqs[this.freqs.length - 1],
+            fMax: this.viewEnd ?? this.freqs[this.freqs.length - 1],
         };
     }
 
@@ -92,8 +92,8 @@ class SpectrumChart {
         if (!this.freqs.length) return null;
         const fMin = this.freqs[0];
         const fMax = this.freqs[this.freqs.length - 1];
-        const t    = (freq - fMin) / (fMax - fMin);
-        const idx  = Math.round(t * (this.freqs.length - 1));
+        const t = (freq - fMin) / (fMax - fMin);
+        const idx = Math.round(t * (this.freqs.length - 1));
         if (idx < 0 || idx >= this.mags.length) return null;
         return this.mags[idx];
     }
@@ -103,7 +103,7 @@ class SpectrumChart {
         const { fMin, fMax } = this._freqRange();
         const w = this.canvas.width;
         const hzPerPx = (fMax - fMin) / w;
-        const hzTol   = hzPerPx * pxTolerance;
+        const hzTol = hzPerPx * pxTolerance;
 
         let nearest = null;
         let minDist = Infinity;
@@ -128,10 +128,10 @@ class SpectrumChart {
             const scaleX = c.width / rect.width;
             const scaleY = c.height / rect.height;
             const px = (e.clientX - rect.left) * scaleX;
-            const py = (e.clientY - rect.top)  * scaleY;
+            const py = (e.clientY - rect.top) * scaleY;
 
             this._mouseFreq = this._xToFreq(px);
-            this._mousePwr  = this._freqToMag(this._mouseFreq);
+            this._mousePwr = this._freqToMag(this._mouseFreq);
             this._hoverPeak = this._snapToPeak(this._mouseFreq);
 
             // Drag-pan
@@ -140,7 +140,7 @@ class SpectrumChart {
                 const hzPerPx = (fMax - fMin) / c.width;
                 const delta = (px - this._drag.startX) * hzPerPx;
                 this.viewStart = this._drag.startViewStart - delta;
-                this.viewEnd   = this._drag.startViewEnd   - delta;
+                this.viewEnd = this._drag.startViewEnd - delta;
                 this._syncWaterfall();
             }
 
@@ -149,7 +149,7 @@ class SpectrumChart {
 
         c.addEventListener('mouseleave', () => {
             this._mouseFreq = null;
-            this._mousePwr  = null;
+            this._mousePwr = null;
             this._hoverPeak = null;
             if (this._drag) this._drag = null;
             this.draw();
@@ -163,9 +163,9 @@ class SpectrumChart {
             const px = (e.clientX - rect.left) * scaleX;
             const { fMin, fMax } = this._freqRange();
             this._drag = {
-                startX:         px,
+                startX: px,
                 startViewStart: this.viewStart ?? fMin,
-                startViewEnd:   this.viewEnd   ?? fMax,
+                startViewEnd: this.viewEnd ?? fMax,
             };
             c.style.cursor = 'grabbing';
             e.preventDefault();
@@ -215,7 +215,7 @@ class SpectrumChart {
             if (newSpan < minSpan) newSpan = minSpan;
             if (newSpan > (dataMax - dataMin)) {
                 this.viewStart = null;
-                this.viewEnd   = null;
+                this.viewEnd = null;
                 this._syncWaterfall();
                 this.draw();
                 return;
@@ -223,7 +223,7 @@ class SpectrumChart {
 
             const t = (pivotFreq - fMin) / span;
             this.viewStart = Math.max(dataMin, pivotFreq - t * newSpan);
-            this.viewEnd   = Math.min(dataMax, this.viewStart + newSpan);
+            this.viewEnd = Math.min(dataMax, this.viewStart + newSpan);
 
             this._syncWaterfall();
             this.draw();
@@ -232,7 +232,7 @@ class SpectrumChart {
         // Double-click: reset zoom
         c.addEventListener('dblclick', () => {
             this.viewStart = null;
-            this.viewEnd   = null;
+            this.viewEnd = null;
             this._syncWaterfall();
             this.draw();
         });
@@ -265,14 +265,14 @@ class SpectrumChart {
 
     resize() {
         const parent = this.canvas.parentElement;
-        this.canvas.width  = parent.clientWidth;
+        this.canvas.width = parent.clientWidth;
         this.canvas.height = parent.clientHeight;
         this.draw();
     }
 
     updateData(freqs, mags, peaks) {
         this.freqs = freqs;
-        this.mags  = mags;
+        this.mags = mags;
         this.peaks = peaks;
 
         // Clamp view to data bounds if fully outside
@@ -282,7 +282,7 @@ class SpectrumChart {
             if (this.viewStart !== null && this.viewEnd !== null) {
                 if (this.viewEnd < dMin || this.viewStart > dMax) {
                     this.viewStart = null;
-                    this.viewEnd   = null;
+                    this.viewEnd = null;
                 }
             }
         }
@@ -355,23 +355,9 @@ class SpectrumChart {
             ctx.fillText(`${label}`, x, h - 4);
         }
 
-        // ── Threshold line ─────────────────────────────────────────────────
-        const threshY = this._dbToY(this.threshold);
-        ctx.strokeStyle = 'rgba(240,64,96,0.6)';
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, threshY);
-        ctx.lineTo(w, threshY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(240,64,96,0.7)';
-        ctx.font = '9px JetBrains Mono';
-        ctx.textAlign = 'right';
-        ctx.fillText(`${this.threshold} dBm`, w - 4, threshY - 3);
-
         // ── Spectrum fill & line ───────────────────────────────────────────
-        const visStart = Math.max(0, Math.round(((fMin - this.freqs[0]) / (this.freqs[this.freqs.length-1] - this.freqs[0])) * (this.freqs.length - 1)));
-        const visEnd   = Math.min(this.freqs.length - 1, Math.round(((fMax - this.freqs[0]) / (this.freqs[this.freqs.length-1] - this.freqs[0])) * (this.freqs.length - 1)));
+        const visStart = Math.max(0, Math.round(((fMin - this.freqs[0]) / (this.freqs[this.freqs.length - 1] - this.freqs[0])) * (this.freqs.length - 1)));
+        const visEnd = Math.min(this.freqs.length - 1, Math.round(((fMax - this.freqs[0]) / (this.freqs[this.freqs.length - 1] - this.freqs[0])) * (this.freqs.length - 1)));
 
         // Decimate data to match canvas width
         const decimatedPoints = [];
@@ -410,9 +396,9 @@ class SpectrumChart {
 
         // Gradient fill
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0,   'rgba(61,139,255,0.35)');
+        grad.addColorStop(0, 'rgba(61,139,255,0.35)');
         grad.addColorStop(0.7, 'rgba(61,139,255,0.05)');
-        grad.addColorStop(1,   'rgba(61,139,255,0)');
+        grad.addColorStop(1, 'rgba(61,139,255,0)');
 
         ctx.beginPath();
         if (decimatedPoints.length > 0) {
@@ -438,6 +424,22 @@ class SpectrumChart {
             }
         }
         ctx.stroke();
+
+        // ── Threshold line (drawn on top of spectrum) ──────────────────────
+        const threshY = this._dbToY(this.threshold);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffff00'; // Bright yellow
+        ctx.setLineDash([12, 8]);
+        ctx.beginPath();
+        ctx.moveTo(0, threshY);
+        ctx.lineTo(w, threshY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#ffff00';
+        ctx.font = 'bold 12px JetBrains Mono';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${this.threshold} dBm`, w - 6, threshY - 6);
 
         // ── Peaks ──────────────────────────────────────────────────────────
         for (const p of (this.peaks || [])) {
@@ -494,8 +496,8 @@ class SpectrumChart {
 
     _drawCrosshairTooltip(ctx, mx, freq, pwr, w, h) {
         const freqStr = `${(freq / 1e6).toFixed(4)} MHz`;
-        const pwrStr  = `${pwr.toFixed(1)} dBm`;
-        const text    = `${freqStr}   ${pwrStr}`;
+        const pwrStr = `${pwr.toFixed(1)} dBm`;
+        const text = `${freqStr}   ${pwrStr}`;
 
         ctx.font = '11px JetBrains Mono';
         const tw = ctx.measureText(text).width;
@@ -579,7 +581,7 @@ class WaterfallChart {
         // Offscreen stores the FULL-width history (never cropped)
         this.offscreenCanvas = document.createElement('canvas');
         this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: true })
-                         || this.offscreenCanvas.getContext('2d');
+            || this.offscreenCanvas.getContext('2d');
         if (!this.offscreenCtx) throw new Error('Unable to create offscreen 2D context.');
 
         // Frequency bounds of the data in the offscreen canvas
@@ -588,14 +590,14 @@ class WaterfallChart {
 
         // Current view (set by SpectrumChart.syncView); null = show all
         this.viewStart = null;
-        this.viewEnd   = null;
+        this.viewEnd = null;
 
         window.addEventListener('resize', () => this.resize());
         this.resize();
     }
 
     initOffscreen() {
-        this.offscreenCanvas.width  = this.canvas.width  || 1024;
+        this.offscreenCanvas.width = this.canvas.width || 1024;
         this.offscreenCanvas.height = this.historySize;
         this.offscreenCtx.fillStyle = '#080e1a';
         this.offscreenCtx.fillRect(0, 0, this.offscreenCanvas.width, this.offscreenCanvas.height);
@@ -603,7 +605,7 @@ class WaterfallChart {
 
     resize() {
         const parent = this.canvas.parentElement;
-        this.canvas.width  = parent.clientWidth;
+        this.canvas.width = parent.clientWidth;
         this.canvas.height = parent.clientHeight;
         this.initOffscreen();
     }
@@ -611,7 +613,7 @@ class WaterfallChart {
     // Called by SpectrumChart whenever its view changes
     syncView(viewStart, viewEnd, freqs) {
         this.viewStart = viewStart;
-        this.viewEnd   = viewEnd;
+        this.viewEnd = viewEnd;
         if (freqs && freqs.length >= 2) {
             this.dataMin = freqs[0];
             this.dataMax = freqs[freqs.length - 1];
@@ -647,22 +649,22 @@ class WaterfallChart {
         // Draw new row at y=0 (always full width = full frequency range)
         const newRow = this.offscreenCtx.createImageData(ow, 1);
         const data = newRow.data;
-        const len  = mags.length;
+        const len = mags.length;
 
         for (let x = 0; x < ow; x++) {
-            const idx   = Math.floor((x / ow) * len);
+            const idx = Math.floor((x / ow) * len);
             const color = this.getColor(mags[idx]);
             const i = x * 4;
-            data[i] = color[0]; data[i+1] = color[1];
-            data[i+2] = color[2]; data[i+3] = color[3];
+            data[i] = color[0]; data[i + 1] = color[1];
+            data[i + 2] = color[2]; data[i + 3] = color[3];
         }
         this.offscreenCtx.putImageData(newRow, 0, 0);
         this.draw();
     }
 
     draw() {
-        const w  = this.canvas.width;
-        const h  = this.canvas.height;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
         const ow = this.offscreenCanvas.width;
         const oh = this.offscreenCanvas.height;
         const ctx = this.ctx;
@@ -670,7 +672,7 @@ class WaterfallChart {
         // If a view window is active AND we have data bounds, crop the offscreen
         if (
             this.viewStart !== null && this.viewEnd !== null &&
-            this.dataMin   !== null && this.dataMax !== null &&
+            this.dataMin !== null && this.dataMax !== null &&
             this.dataMax > this.dataMin
         ) {
             const dataSpan = this.dataMax - this.dataMin;

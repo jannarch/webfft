@@ -7,3 +7,4 @@
 2026-08-12 11:03:26 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: C17E831C [simulation]
 2026-08-12 11:03:26 [INFO    ] sdr_monitor.web_backend (main.py:196): SDR started in [SIMULATION] mode. Session: C17E831C
 2026-08-12 11:03:26 [INFO    ] sdr_monitor.web_backend (main.py:215): Web-SDR Application Started. Session: C17E831C
+2026-08-12 15:28:33 [INFO    ] sdr_monitor.web_backend (main.py:219): Shutting down Web-SDR Application...

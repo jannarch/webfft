@@ -11,9 +11,15 @@ class WebAudioPlayer {
 
         // Jitter buffer: queue chunks and play with a slight delay
         this._jitterBuffer = [];
-        this._jitterDelayMs = 80;  // 80ms buffer to smooth out WebSocket delivery jitter
+        this._jitterDelayMs = 100; // 100ms buffer to smooth out delivery jitter
         this._jitterStarted = false;
-        this._drainInterval = null;
+        
+        // Noise gate: suppress output when signal is weak
+        this._noiseGateThreshold = 0.015;
+        this._noiseGateEnabled = true;
+        
+        // Crossfade state
+        this._prevChunk = null;
     }
 
     _initAudio() {
@@ -22,7 +28,7 @@ class WebAudioPlayer {
                 sampleRate: this.sampleRate
             });
             this.gainNode = this.audioCtx.createGain();
-            this.gainNode.gain.value = this.volume;
+            this.gainNode.gain.value = 0;
             this.gainNode.connect(this.audioCtx.destination);
         }
     }
@@ -30,7 +36,6 @@ class WebAudioPlayer {
     setVolume(val) {
         this.volume = Math.max(0, Math.min(1, val));
         if (this.gainNode) {
-            // Smooth transition
             this.gainNode.gain.setTargetAtTime(this.volume, this.audioCtx.currentTime, 0.05);
         }
     }
@@ -48,6 +53,7 @@ class WebAudioPlayer {
         this._jitterBuffer = [];
         this._jitterStarted = false;
         this.nextStartTime = 0;
+        this._prevChunk = null;
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/audio`);
@@ -60,17 +66,19 @@ class WebAudioPlayer {
 
         this.ws.onmessage = (event) => {
             if (!this.isPlaying) return;
-            // Push into the jitter buffer instead of playing immediately
             this._jitterBuffer.push(event.data);
 
-            // Once we've accumulated enough buffer, start draining
             if (!this._jitterStarted) {
-                const chunksNeeded = Math.max(2, Math.ceil(this._jitterDelayMs / 20));
+                const chunksNeeded = Math.max(4, Math.ceil(this._jitterDelayMs / 20));
                 if (this._jitterBuffer.length >= chunksNeeded) {
                     this._jitterStarted = true;
                     this.nextStartTime = this.audioCtx.currentTime + (this._jitterDelayMs / 1000);
-                    this._startDraining();
+                    this.gainNode.gain.setValueAtTime(0, this.nextStartTime);
+                    this.gainNode.gain.linearRampToValueAtTime(this.volume, this.nextStartTime + 0.1);
+                    this._drainBuffer();
                 }
+            } else {
+                this._drainBuffer();
             }
         };
 
@@ -80,31 +88,53 @@ class WebAudioPlayer {
         };
     }
 
-    _startDraining() {
-        // Drain the jitter buffer at a regular interval (~20ms)
-        if (this._drainInterval) clearInterval(this._drainInterval);
-        this._drainInterval = setInterval(() => {
-            if (!this.isPlaying) {
-                clearInterval(this._drainInterval);
-                this._drainInterval = null;
-                return;
+    _drainBuffer() {
+        const merged = this._mergeChunks(40);
+        for (const chunk of merged) {
+            this._scheduleAudioChunk(chunk);
+        }
+    }
+
+    _mergeChunks(targetMs) {
+        const targetSamples = Math.floor(this.sampleRate * targetMs / 1000);
+        const merged = [];
+        let current = null;
+        let currentLen = 0;
+
+        while (this._jitterBuffer.length > 0) {
+            const chunk = this._jitterBuffer.shift();
+            const int16 = new Int16Array(chunk);
+            
+            if (current === null) {
+                current = new Int16Array(int16);
+                currentLen = int16.length;
+            } else {
+                const combined = new Int16Array(currentLen + int16.length);
+                combined.set(current, 0);
+                combined.set(int16, currentLen);
+                current = combined;
+                currentLen += int16.length;
             }
-            // Schedule all queued chunks
-            while (this._jitterBuffer.length > 0) {
-                const chunk = this._jitterBuffer.shift();
-                this._scheduleAudioChunk(chunk);
+
+            if (currentLen >= targetSamples) {
+                merged.push(current.buffer.slice(0));
+                current = null;
+                currentLen = 0;
             }
-        }, 20);
+        }
+
+        if (current !== null && currentLen > 0) {
+            merged.push(current.buffer.slice(0));
+        }
+
+        return merged;
     }
 
     stop() {
         this.isPlaying = false;
         this._jitterBuffer = [];
         this._jitterStarted = false;
-        if (this._drainInterval) {
-            clearInterval(this._drainInterval);
-            this._drainInterval = null;
-        }
+        this._prevChunk = null;
         if (this.ws) {
             if (this.ws.readyState === WebSocket.OPEN) {
                 this.ws.send(JSON.stringify({ action: "stop" }));
@@ -112,28 +142,53 @@ class WebAudioPlayer {
             this.ws.close();
             this.ws = null;
         }
+        if (this.gainNode) {
+            const now = this.audioCtx.currentTime;
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
+        }
     }
 
     _scheduleAudioChunk(buffer) {
-        // Buffer is an ArrayBuffer containing Int16 PCM data
         const int16Array = new Int16Array(buffer);
         const float32Array = new Float32Array(int16Array.length);
         
-        // Convert int16 to float32
         for (let i = 0; i < int16Array.length; i++) {
             float32Array[i] = int16Array[i] / 32768.0;
         }
 
+        if (this._noiseGateEnabled) {
+            let sumSq = 0;
+            for (let i = 0; i < float32Array.length; i++) {
+                sumSq += float32Array[i] * float32Array[i];
+            }
+            const rms = Math.sqrt(sumSq / float32Array.length);
+            if (rms < this._noiseGateThreshold) {
+                float32Array.fill(0);
+            }
+        }
+
+        // Crossfade with previous chunk to eliminate clicks
+        if (this._prevChunk !== null) {
+            const fadeSamples = Math.min(64, float32Array.length, this._prevChunk.length);
+            for (let i = 0; i < fadeSamples; i++) {
+                const t = i / fadeSamples;
+                float32Array[i] = this._prevChunk[this._prevChunk.length - fadeSamples + i] * (1 - t) + float32Array[i] * t;
+            }
+        }
+        this._prevChunk = new Float32Array(float32Array);
+
         const audioBuffer = this.audioCtx.createBuffer(1, float32Array.length, this.sampleRate);
-        audioBuffer.getChannelData(0).set(float32Array);
+        const channelData = audioBuffer.getChannelData(0);
+        channelData.set(float32Array);
 
         const source = this.audioCtx.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(this.gainNode);
 
-        // Schedule playback — if we fell behind, reset with a small gap
-        if (this.nextStartTime < this.audioCtx.currentTime) {
-            this.nextStartTime = this.audioCtx.currentTime + 0.01;
+        if (this.nextStartTime < this.audioCtx.currentTime + 0.05) {
+            this.nextStartTime = this.audioCtx.currentTime + 0.05;
         }
 
         source.start(this.nextStartTime);
