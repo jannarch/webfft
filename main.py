@@ -122,7 +122,7 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
             for chunk in pcm_chunks:
                 for q in list(audio_queues):
                     # We keep the queue size small so it doesn't build up massive latency
-                    if q.qsize() < 10:
+                    if q.qsize() < 30:
                         audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
         except Exception as e:
             logger.error(f"Audio demodulation error: {e}")
@@ -610,7 +610,7 @@ async def ws_audio(websocket: WebSocket):
                     remaining = audio_demod.flush()
                     if remaining:
                         for q in list(audio_queues):
-                            if q.qsize() < 10:
+                            if q.qsize() < 30:
                                 audio_loop.call_soon_threadsafe(q.put_nowait, remaining)
                 except Exception as e:
                     logger.error(f"Audio flush error: {e}")

@@ -9,7 +9,7 @@ class AudioDemodulator:
     decimates, performs demodulation, applies low-pass filtering,
     and resamples to 48kHz 16-bit PCM for Web Audio API.
     """
-    def __init__(self, target_audio_rate: int = 48000, baseband_rate: float = 240000, chunk_duration_sec: float = 0.02):
+    def __init__(self, target_audio_rate: int = 48000, baseband_rate: float = 48000, chunk_duration_sec: float = 0.2):
         self.target_audio_rate = target_audio_rate
         self.baseband_rate = baseband_rate
         self._chunk_duration_sec = chunk_duration_sec
@@ -92,13 +92,13 @@ class AudioDemodulator:
         return self._lpf_coeffs[1], self._lpf_coeffs[2]
 
     def _apply_deemphasis(self, signal: np.ndarray, sample_rate_hz: float) -> np.ndarray:
-        """75 µs FM de-emphasis IIR filter: y[n] = alpha * x[n] + (1-alpha) * y[n-1]"""
+        """75 µs FM de-emphasis IIR filter: y[n] = (1 - alpha) * x[n] + alpha * y[n-1]"""
         tau = 75e-6  # 75 microseconds
         dt = 1.0 / sample_rate_hz
         alpha = tau / (tau + dt)
-        # Single-pole IIR using lfilter for efficiency
-        b = np.array([alpha], dtype=np.float64)
-        a = np.array([1.0, -1.0 + alpha], dtype=np.float64)
+        # Correct IIR low-pass: feedforward is (1-alpha), feedback is alpha (represented as -alpha in 'a' array)
+        b = np.array([1.0 - alpha], dtype=np.float64)
+        a = np.array([1.0, -alpha], dtype=np.float64)
         zi = np.array([float(self._deemph_prev_y)], dtype=np.float64)
         signal, zf = sp_signal.lfilter(b, a, signal, zi=zi)
         self._deemph_prev_y = float(zf[0])
@@ -199,7 +199,7 @@ class AudioDemodulator:
         n_audio_samples = int(len(demod) * self.target_audio_rate / actual_bb_rate)
         
         if n_audio_samples == 0:
-            return b""
+            return []
             
         x_old = np.linspace(0, 1, len(demod))
         x_new = np.linspace(0, 1, n_audio_samples)

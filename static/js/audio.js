@@ -4,22 +4,20 @@ class WebAudioPlayer {
         this.audioCtx = null;
         this.gainNode = null;
         this.ws = null;
-        
+
         this.isPlaying = false;
-        this.nextStartTime = 0;
         this.volume = 0.5;
 
-        // Jitter buffer: queue chunks and play with a slight delay
-        this._jitterBuffer = [];
-        this._jitterDelayMs = 100; // 100ms buffer to smooth out delivery jitter
-        this._jitterStarted = false;
-        
-        // Noise gate: suppress output when signal is weak
-        this._noiseGateThreshold = 0.015;
-        this._noiseGateEnabled = true;
-        
-        // Crossfade state
-        this._prevChunk = null;
+        // Raw incoming chunk queue (Int16Array items from WebSocket)
+        this._queue = [];
+
+        // Lookahead scheduler state
+        this._scheduleAheadSec = 0.25;   // schedule up to 250ms ahead of playback
+        this._initialBufferSec = 0.15;   // wait for 150ms of audio before starting
+        this._nextPlayTime = 0;           // next Web Audio API timestamp to schedule at
+        this._started = false;            // has playback started yet?
+        this._totalQueued = 0;            // total seconds of audio in the queue
+        this._schedulerTimer = null;      // setInterval handle
     }
 
     _initAudio() {
@@ -28,7 +26,7 @@ class WebAudioPlayer {
                 sampleRate: this.sampleRate
             });
             this.gainNode = this.audioCtx.createGain();
-            this.gainNode.gain.value = 0;
+            this.gainNode.gain.value = this.volume;
             this.gainNode.connect(this.audioCtx.destination);
         }
     }
@@ -43,155 +41,127 @@ class WebAudioPlayer {
     start(frequencyHz, mode = 'FM') {
         if (this.isPlaying) this.stop();
         this._initAudio();
-        
+
         if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
 
         this.isPlaying = true;
-        this._mode = mode;
-        this._jitterBuffer = [];
-        this._jitterStarted = false;
-        this.nextStartTime = 0;
-        this._prevChunk = null;
+        this._queue = [];
+        this._totalQueued = 0;
+        this._started = false;
+        this._nextPlayTime = 0;
+
+        // Start the lookahead scheduler pump — runs every 20ms
+        this._schedulerTimer = setInterval(() => this._schedulerPump(), 20);
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/audio`);
         this.ws.binaryType = 'arraybuffer';
 
         this.ws.onopen = () => {
-            console.log(`Audio WebSocket connected. Requesting ${frequencyHz} Hz in ${mode} mode`);
-            this.ws.send(JSON.stringify({ action: "start", freq_hz: frequencyHz, mode: mode }));
+            console.log(`[Audio] WS open → requesting ${(frequencyHz / 1e6).toFixed(4)} MHz [${mode}]`);
+            this.ws.send(JSON.stringify({ action: 'start', freq_hz: frequencyHz, mode: mode }));
         };
 
         this.ws.onmessage = (event) => {
             if (!this.isPlaying) return;
-            this._jitterBuffer.push(event.data);
+            const int16 = new Int16Array(event.data);
+            const durationSec = int16.length / this.sampleRate;
 
-            if (!this._jitterStarted) {
-                const chunksNeeded = Math.max(4, Math.ceil(this._jitterDelayMs / 20));
-                if (this._jitterBuffer.length >= chunksNeeded) {
-                    this._jitterStarted = true;
-                    this.nextStartTime = this.audioCtx.currentTime + (this._jitterDelayMs / 1000);
-                    this.gainNode.gain.setValueAtTime(0, this.nextStartTime);
-                    this.gainNode.gain.linearRampToValueAtTime(this.volume, this.nextStartTime + 0.1);
-                    this._drainBuffer();
-                }
-            } else {
-                this._drainBuffer();
+            // Overrun protection: cap total buffered audio at 600ms to avoid latency buildup
+            if (this._totalQueued > 0.6) {
+                const dropped = this._queue.shift();
+                if (dropped) this._totalQueued -= dropped.length / this.sampleRate;
             }
+
+            this._queue.push(int16);
+            this._totalQueued += durationSec;
         };
 
         this.ws.onclose = () => {
-            console.log("Audio WebSocket closed.");
+            console.log('[Audio] WS closed.');
             this.stop();
+        };
+
+        this.ws.onerror = (err) => {
+            console.error('[Audio] WS error:', err);
         };
     }
 
-    _drainBuffer() {
-        const merged = this._mergeChunks(40);
-        for (const chunk of merged) {
-            this._scheduleAudioChunk(chunk);
+    /**
+     * Lookahead scheduler pump — runs every 20ms via setInterval.
+     * Schedules all queued chunks whose start time falls within the
+     * lookahead window (now + _scheduleAheadSec). This is the standard
+     * Web Audio API pattern for gapless, stutter-free playback.
+     */
+    _schedulerPump() {
+        if (!this.isPlaying || !this.audioCtx) return;
+
+        const now = this.audioCtx.currentTime;
+
+        // Wait for the initial buffer to fill before starting playback
+        if (!this._started) {
+            if (this._totalQueued < this._initialBufferSec) return;
+            // Start scheduling slightly ahead of now for a clean start
+            this._nextPlayTime = now + 0.05;
+            this._started = true;
         }
-    }
 
-    _mergeChunks(targetMs) {
-        const targetSamples = Math.floor(this.sampleRate * targetMs / 1000);
-        const merged = [];
-        let current = null;
-        let currentLen = 0;
+        // Pump all chunks that fall within the lookahead window
+        while (this._queue.length > 0 && this._nextPlayTime < now + this._scheduleAheadSec) {
+            const int16 = this._queue.shift();
+            const durationSec = int16.length / this.sampleRate;
+            this._totalQueued = Math.max(0, this._totalQueued - durationSec);
 
-        while (this._jitterBuffer.length > 0) {
-            const chunk = this._jitterBuffer.shift();
-            const int16 = new Int16Array(chunk);
-            
-            if (current === null) {
-                current = new Int16Array(int16);
-                currentLen = int16.length;
-            } else {
-                const combined = new Int16Array(currentLen + int16.length);
-                combined.set(current, 0);
-                combined.set(int16, currentLen);
-                current = combined;
-                currentLen += int16.length;
+            const float32 = new Float32Array(int16.length);
+            for (let i = 0; i < int16.length; i++) {
+                float32[i] = int16[i] / 32768.0;
             }
 
-            if (currentLen >= targetSamples) {
-                merged.push(current.buffer.slice(0));
-                current = null;
-                currentLen = 0;
-            }
+            const audioBuffer = this.audioCtx.createBuffer(1, float32.length, this.sampleRate);
+            audioBuffer.getChannelData(0).set(float32);
+
+            const source = this.audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(this.gainNode);
+            source.start(this._nextPlayTime);
+
+            this._nextPlayTime += durationSec;
         }
 
-        if (current !== null && currentLen > 0) {
-            merged.push(current.buffer.slice(0));
+        // Underrun: playhead caught up and queue is empty — re-buffer cleanly
+        if (this._started && this._nextPlayTime < now && this._queue.length === 0) {
+            console.warn('[Audio] Underrun — re-buffering...');
+            this._started = false;
+            this._nextPlayTime = 0;
+            this._totalQueued = 0;
         }
-
-        return merged;
     }
 
     stop() {
         this.isPlaying = false;
-        this._jitterBuffer = [];
-        this._jitterStarted = false;
-        this._prevChunk = null;
+        this._queue = [];
+        this._totalQueued = 0;
+        this._started = false;
+        this._nextPlayTime = 0;
+
+        if (this._schedulerTimer !== null) {
+            clearInterval(this._schedulerTimer);
+            this._schedulerTimer = null;
+        }
         if (this.ws) {
             if (this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send(JSON.stringify({ action: "stop" }));
+                this.ws.send(JSON.stringify({ action: 'stop' }));
             }
             this.ws.close();
             this.ws = null;
         }
-        if (this.gainNode) {
+        if (this.gainNode && this.audioCtx) {
             const now = this.audioCtx.currentTime;
             this.gainNode.gain.cancelScheduledValues(now);
             this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-            this.gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
+            this.gainNode.gain.linearRampToValueAtTime(0, now + 0.08);
         }
-    }
-
-    _scheduleAudioChunk(buffer) {
-        const int16Array = new Int16Array(buffer);
-        const float32Array = new Float32Array(int16Array.length);
-        
-        for (let i = 0; i < int16Array.length; i++) {
-            float32Array[i] = int16Array[i] / 32768.0;
-        }
-
-        if (this._noiseGateEnabled) {
-            let sumSq = 0;
-            for (let i = 0; i < float32Array.length; i++) {
-                sumSq += float32Array[i] * float32Array[i];
-            }
-            const rms = Math.sqrt(sumSq / float32Array.length);
-            if (rms < this._noiseGateThreshold) {
-                float32Array.fill(0);
-            }
-        }
-
-        // Crossfade with previous chunk to eliminate clicks
-        if (this._prevChunk !== null) {
-            const fadeSamples = Math.min(64, float32Array.length, this._prevChunk.length);
-            for (let i = 0; i < fadeSamples; i++) {
-                const t = i / fadeSamples;
-                float32Array[i] = this._prevChunk[this._prevChunk.length - fadeSamples + i] * (1 - t) + float32Array[i] * t;
-            }
-        }
-        this._prevChunk = new Float32Array(float32Array);
-
-        const audioBuffer = this.audioCtx.createBuffer(1, float32Array.length, this.sampleRate);
-        const channelData = audioBuffer.getChannelData(0);
-        channelData.set(float32Array);
-
-        const source = this.audioCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(this.gainNode);
-
-        if (this.nextStartTime < this.audioCtx.currentTime + 0.05) {
-            this.nextStartTime = this.audioCtx.currentTime + 0.05;
-        }
-
-        source.start(this.nextStartTime);
-        this.nextStartTime += audioBuffer.duration;
     }
 }

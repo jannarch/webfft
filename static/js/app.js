@@ -61,6 +61,54 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof logDebug === 'function') logDebug('Failed to initialize audio player: ' + err.message);
         }
 
+        // Load Animations
+        gsap.from('.sidebar-section',{
+            x: -40,
+            opacity: 0,
+            stagger: 0.08,
+            duration: 0.5,
+            ease: 'back.out(1.4)',
+            delay: 0.2
+        });
+
+                // ─── Splash Screen Animation ───────────────────────────────────────────
+        const splashOverlay = document.getElementById('splash-overlay');
+        const splashLogos = document.querySelectorAll('.splash-logo');
+        const brandLogos = document.querySelector('.brand-logos');
+
+        if (splashOverlay && splashLogos.length && brandLogos) {
+            const tl = gsap.timeline({
+                onComplete: () => {
+                    splashOverlay.remove();
+                }
+            });
+
+            tl.to(splashLogos, {
+                opacity: 1,
+                duration: 0.6,
+                stagger: 0.15,
+                ease: 'power2.out'
+            });
+
+            tl.to({}, { duration: 0.6 });
+
+            tl.to(splashLogos, {
+                y: 200,
+                x: -140,
+                opacity: 0,
+                scale: 0.5,
+                duration: 0.7,
+                ease: 'power3.in'
+            }, '>');
+
+            tl.to(brandLogos, {
+                opacity: 0.9,
+                duration: 0.4,
+                ease: 'power2.out'
+            }, '<0.3');
+        }
+
+
     // ─── DOM Elements ────────────────────────────────────────────────────────
     const startFreqInput = document.getElementById('start-freq-input');
     const stopFreqInput = document.getElementById('stop-freq-input');
@@ -333,6 +381,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startFreqInput.addEventListener('change', updateTuningFromRange);
     stopFreqInput.addEventListener('change', updateTuningFromRange);
+
+        // ─── Drag-to-Tune for Frequency Inputs ───────────────────────────────────
+    function addDragToTune(input) {
+        let startX = 0;
+        let startValue = 0;
+
+        input.addEventListener('pointerdown', (e) => {
+            input.setPointerCapture(e.pointerId);
+            startX = e.clientX;
+            startValue = parseFloat(input.value) || 0;
+            input.style.cursor = 'ew-resize';
+        });
+
+        input.addEventListener('pointermove', (e) => {
+            if (e.buttons !== 1) return; // Only when left button held
+            
+            const dx = e.clientX - startX;
+            const sensitivity = 0.02; // MHz per pixel
+            
+            // Modifier keys for finer/coarser control
+            let step = sensitivity;
+            if (e.shiftKey) step = sensitivity * 0.1;  // Fine: 0.002 MHz/pixel
+            if (e.ctrlKey) step = sensitivity * 10;     // Coarse: 0.2 MHz/pixel
+            
+            const delta = dx * step;
+            const newValue = Math.round((startValue + delta) * 10) / 10; // Round to 0.1 MHz
+            input.value = newValue.toFixed(1);
+            
+            // Live update while dragging
+            updateTuningFromRange();
+        });
+
+        const endDrag = (e) => {
+            input.style.cursor = '';
+            input.releasePointerCapture(e.pointerId);
+        };
+
+        input.addEventListener('pointerup', endDrag);
+        input.addEventListener('pointercancel', endDrag);
+        input.addEventListener('pointerleave', endDrag);
+    }
+
+    addDragToTune(startFreqInput);
+    addDragToTune(stopFreqInput);
 
     scanModeInput.addEventListener('change', (e) => {
         updateTuningFromRange();

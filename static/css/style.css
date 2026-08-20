@@ -82,6 +82,29 @@ body {
         var(--bg-base);
 }
 
+/* Splash Screen */
+#splash-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    z-index: 9999;
+}
+
+.splash-logo {
+    height: 90px;
+    width: auto;
+    opacity: 0;
+}
+
+.brand-logos {
+    opacity: 0;
+}
+
+
 /* ─────────────────────────────────────────────────────────────
    SIDEBAR
 ───────────────────────────────────────────────────────────── */
