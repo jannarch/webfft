@@ -95,7 +95,7 @@ body {
 }
 
 .splash-logo {
-    height: 90px;
+    height: 85px;
     width: auto;
     opacity: 0;
 }
@@ -104,6 +104,30 @@ body {
     opacity: 0;
 }
 
+.splash-logo {
+    height: 90px;
+    width: auto;
+    opacity: 0;
+}
+
+.splash-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    opacity: 0;
+    letter-spacing: 0.5px;
+}
+
+.splash-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    opacity: 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
 
 /* ─────────────────────────────────────────────────────────────
    SIDEBAR

@@ -19,3 +19,58 @@
 2026-08-20 11:36:31 [INFO    ] sdr_monitor.web_backend (main.py:239): Web-SDR Application Started. Session: 611B048E
 2026-08-20 11:36:58 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
 2026-08-20 11:37:08 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:17 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:17 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:22 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 7AA1BAAC [simulation]
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [SIMULATION] mode. Session: 7AA1BAAC
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 6A073EDE [simulation]
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 7DACCA0D [simulation]
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 119F5513 [simulation]
+2026-08-20 15:10:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 426FDC20 [simulation]
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:25 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:26 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:26 [INFO    ] sdr_monitor.web_backend (main.py:571): Client disconnected from WebSocket.
+2026-08-20 15:10:38 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-08-20 15:10:38 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:458): SDREngine initialized in simulation mode.
+2026-08-20 15:10:38 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 6B163AA6 [simulation]
+2026-08-20 15:10:38 [INFO    ] sdr_monitor.web_backend (main.py:220): SDR started in [SIMULATION] mode. Session: 6B163AA6

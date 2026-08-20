@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             x: -40,
             opacity: 0,
             stagger: 0.08,
-            duration: 0.5,
+            duration: 6,
             ease: 'back.out(1.4)',
             delay: 0.2
         });
@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ─── Splash Screen Animation ───────────────────────────────────────────
         const splashOverlay = document.getElementById('splash-overlay');
         const splashLogos = document.querySelectorAll('.splash-logo');
+        const splashText = document.querySelector('.splash-text');
+        const splashSubtitle = document.querySelector('.splash-subtitle');
         const brandLogos = document.querySelector('.brand-logos');
 
         if (splashOverlay && splashLogos.length && brandLogos) {
@@ -90,14 +92,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 ease: 'power2.out'
             });
 
-            tl.to({}, { duration: 0.6 });
+            tl.to([splashText, splashSubtitle],{
+                opacity: 1,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: 'power2.out'
+            }, '-=0.3');
 
-            tl.to(splashLogos, {
+            tl.to({}, { duration: 0.8 });
+
+            tl.to([splashLogos, splashText, splashSubtitle], {
                 y: 200,
-                x: -140,
+                x: 0,
                 opacity: 0,
-                scale: 0.5,
                 duration: 0.7,
+                stagger: 0.05,
                 ease: 'power3.in'
             }, '>');
 
