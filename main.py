@@ -119,13 +119,25 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
     if audio_target_freq_hz is not None and len(audio_queues) > 0 and audio_loop is not None:
         try:
             pcm_chunks = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
+            
+            # Log audio production statistics occasionally
+            if len(pcm_chunks) > 0:
+                for i, q in enumerate(audio_queues):
+                    logger.debug(f"Audio: produced {len(pcm_chunks)} chunks, queue {i} size: {q.qsize()}")
+            
             for chunk in pcm_chunks:
                 for q in list(audio_queues):
-                    # We keep the queue size small so it doesn't build up massive latency
-                    if q.qsize() < 30:
-                        audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
+                    # Updated queue limit for larger circular buffer (100→150 chunks)
+                    if q.qsize() < 150:
+                        try:
+                            audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
+                        except Exception as e:
+                            logger.warning(f"Failed to queue audio chunk: {e}")
+                    else:
+                        # Drop chunks if queue is full to prevent memory buildup
+                        logger.warning(f"Audio queue full (size: {q.qsize()}), dropping chunk to prevent overflow")
         except Exception as e:
-            logger.error(f"Audio demodulation error: {e}")
+            logger.error(f"Audio demodulation error: {e}", exc_info=True)
         
     # Update latest frame for WebSockets
     with frame_lock:
@@ -579,17 +591,45 @@ async def ws_audio(websocket: WebSocket):
     await websocket.accept()
     logger.info("Audio WebSocket client connected.")
     
-    q = asyncio.Queue()
+    q = asyncio.Queue(maxsize=200)  # Larger queue for better buffering
     audio_queues.append(q)
+    
+    # Audio streaming parameters (WebSDR-inspired)
+    TARGET_CHUNK_RATE = 50  # chunks per second (20ms chunks)
+    SEND_INTERVAL = 1.0 / TARGET_CHUNK_RATE
     
     # Task to consume from the queue and send to the client
     async def send_audio():
+        chunks_sent = 0
+        last_send_time = asyncio.get_event_loop().time()
+        
         try:
             while True:
-                data = await q.get()
-                await websocket.send_bytes(data)
+                try:
+                    # Use timeout to allow for rate limiting
+                    data = await asyncio.wait_for(q.get(), timeout=0.1)
+                    
+                    # Rate limiting to match target chunk rate
+                    current_time = asyncio.get_event_loop().time()
+                    time_since_last = current_time - last_send_time
+                    
+                    if time_since_last < SEND_INTERVAL:
+                        await asyncio.sleep(SEND_INTERVAL - time_since_last)
+                    
+                    await websocket.send_bytes(data)
+                    chunks_sent += 1
+                    last_send_time = asyncio.get_event_loop().time()
+                    
+                    if chunks_sent % 100 == 0:  # Log every 100 chunks
+                        stats = audio_demod.get_stats()
+                        logger.debug(f"Audio WebSocket: sent {chunks_sent} chunks, queue: {q.qsize()}, stats: {stats}")
+                        
+                except asyncio.TimeoutError:
+                    # No data available, continue loop
+                    continue
+                    
         except Exception as e:
-            logger.error(f"Audio send task error: {e}")
+            logger.error(f"Audio send task error: {e}", exc_info=True)
 
     send_task = asyncio.create_task(send_audio())
     
@@ -610,7 +650,7 @@ async def ws_audio(websocket: WebSocket):
                     remaining = audio_demod.flush()
                     if remaining:
                         for q in list(audio_queues):
-                            if q.qsize() < 30:
+                            if q.qsize() < 150:  # Use same queue limit as main audio path
                                 audio_loop.call_soon_threadsafe(q.put_nowait, remaining)
                 except Exception as e:
                     logger.error(f"Audio flush error: {e}")

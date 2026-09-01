@@ -12,12 +12,13 @@ class WebAudioPlayer {
         this._queue = [];
 
         // Lookahead scheduler state
-        this._scheduleAheadSec = 0.25;   // schedule up to 250ms ahead of playback
-        this._initialBufferSec = 0.15;   // wait for 150ms of audio before starting
+        this._scheduleAheadSec = 0.3;    // schedule up to 300ms ahead of playback (increased from 250ms)
+        this._initialBufferSec = 0.2;    // wait for 200ms of audio before starting (increased from 150ms)
         this._nextPlayTime = 0;           // next Web Audio API timestamp to schedule at
         this._started = false;            // has playback started yet?
         this._totalQueued = 0;            // total seconds of audio in the queue
         this._schedulerTimer = null;      // setInterval handle
+        this._maxBufferSec = 1.5;         // maximum buffer size before dropping chunks (increased from 600ms)
     }
 
     _initAudio() {
@@ -69,8 +70,8 @@ class WebAudioPlayer {
             const int16 = new Int16Array(event.data);
             const durationSec = int16.length / this.sampleRate;
 
-            // Overrun protection: cap total buffered audio at 600ms to avoid latency buildup
-            if (this._totalQueued > 0.6) {
+            // Overrun protection: cap total buffered audio to prevent latency buildup
+            if (this._totalQueued > this._maxBufferSec) {
                 const dropped = this._queue.shift();
                 if (dropped) this._totalQueued -= dropped.length / this.sampleRate;
             }

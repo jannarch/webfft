@@ -287,14 +287,18 @@ class SDRWorker(threading.Thread):
 
     def _run_hardware(self):
         try:
-            # pyrefly: ignore [missing-import]
             import SoapySDR
-            # pyrefly: ignore [missing-import]
             from SoapySDR import SOAPY_SDR_RX, SOAPY_SDR_CF32
 
             self._rx_stream = self._sdr.setupStream(SOAPY_SDR_RX, SOAPY_SDR_CF32)
             self._sdr.activateStream(self._rx_stream)
-            n = self._config.fft_size * 4
+            
+            # Use a much larger buffer to prevent CPU choke (target ~25 reads per second)
+            # e.g., 2MHz / 25 = 80,000 samples. 
+            n_target = int(self._config.sample_rate_hz / 25.0)
+            # Ensure it's at least fft_size
+            n = max(self._config.fft_size * 4, n_target)
+            
             buff = np.zeros(n, dtype=np.complex64)
             self._current_sweep_freq = self._config.sweep_start_hz
             dwell_end = time.time() + self._config.dwell_time_ms / 1000.0
@@ -335,7 +339,10 @@ class SDRWorker(threading.Thread):
     # ── Simulation loop ────────────────────────────────────────────────────────
 
     def _run_simulation(self):
-        n = self._config.fft_size * 4
+        # Use a much larger buffer to prevent CPU choke (target ~25 reads per second)
+        n_target = int(self._config.sample_rate_hz / self._config.update_rate_hz)
+        n = max(self._config.fft_size * 4, n_target)
+        
         target_interval = 1.0 / self._config.update_rate_hz
         self._current_sweep_freq = self._config.sweep_start_hz
         dwell_end = time.time() + self._config.dwell_time_ms / 1000.0
