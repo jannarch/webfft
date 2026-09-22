@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.signal as sp_signal
 from typing import List
+from core.cpp_dsp_wrapper import CppDSP
 from utils.logger import get_logger
 
 logger = get_logger("audio_demodulator")
@@ -8,22 +9,16 @@ logger = get_logger("audio_demodulator")
 
 class AudioDemodulator:
     """
-    Real-time AM/FM demodulator.
+    Real-time AM/FM demodulator accelerated by native C++ DSP.
 
     Pipeline per call:
       IQ samples (SDR rate, e.g. 20 MHz)
-        -> frequency shift to baseband
-        -> decimate to BASEBAND_RATE (200 kHz)   <- must be wide enough for FM signal
-        -> FM/AM demodulate
+        -> C++ frequency shift & decimate to BASEBAND_RATE (200 kHz)
+        -> C++ FM/AM demodulate
         -> low-pass filter
-        -> FM de-emphasis (FM only)
-        -> linear resample to TARGET_AUDIO_RATE (48 kHz)
+        -> C++ FM de-emphasis (FM only)
+        -> C++ linear resample to TARGET_AUDIO_RATE (48 kHz)
         -> emit consistent-sized PCM chunks
-
-    IMPORTANT: BASEBAND_RATE must stay around 200 kHz for FM.
-    FM broadcast needs ~200 kHz bandwidth (Carson: 2*(75+15) kHz).
-    Setting baseband_rate == target_audio_rate (48 kHz) causes 416x over-decimation
-    which destroys the FM signal completely.
     """
 
     # Fixed intermediate baseband rate - do NOT change to 48000!
@@ -38,23 +33,29 @@ class AudioDemodulator:
         self.baseband_rate = self.BASEBAND_RATE
         self._chunk_duration_sec = chunk_duration_sec
 
+        # Native C++ DSP engine
+        self._cpp_dsp = CppDSP()
+
         # Filter states (stateful across callbacks)
-        self._last_phase: float = 0.0
-        self._dc_block_prev_x: float = 0.0
-        self._dc_block_prev_y: float = 0.0
+        self._last_nco_phase: float = 0.0
+        self._last_i: float = 0.0
+        self._last_q: float = 0.0
+        self._dc_prev_x: float = 0.0
+        self._dc_prev_y: float = 0.0
+        self._deemph_prev_y: float = 0.0
+
         self._lpf_zi = None
         self._lpf_coeffs_key = None
         self._lpf_b = None
         self._lpf_a = None
-        self._deemph_prev_y: float = 0.0
 
         # Output accumulation buffer
         self._audio_buffer = np.empty(0, dtype=np.float32)
 
-        logger.debug(
-            f"AudioDemodulator init: target={target_audio_rate} Hz, "
-            f"baseband={self.BASEBAND_RATE:.0f} Hz, "
-            f"chunk={chunk_duration_sec*1000:.0f} ms"
+        accel = "Native C++ DLL (AVX2/FMA)" if self._cpp_dsp.is_native_available else "NumPy Fallback"
+        logger.info(
+            f"AudioDemodulator init: [{accel}], target={target_audio_rate} Hz, "
+            f"baseband={self.BASEBAND_RATE:.0f} Hz, chunk={chunk_duration_sec*1000:.0f} ms"
         )
 
     def _get_lpf(self, cutoff_hz: float, rate_hz: float):
@@ -112,14 +113,16 @@ class AudioDemodulator:
 
     def reset_filter_state(self):
         """Reset all DSP states (call when tuning to a new frequency or mode)."""
-        self._last_phase = 0.0
-        self._dc_block_prev_x = 0.0
-        self._dc_block_prev_y = 0.0
+        self._last_nco_phase = 0.0
+        self._last_i = 0.0
+        self._last_q = 0.0
+        self._dc_prev_x = 0.0
+        self._dc_prev_y = 0.0
+        self._deemph_prev_y = 0.0
         self._lpf_zi = None
         self._lpf_coeffs_key = None
         self._lpf_b = None
         self._lpf_a = None
-        self._deemph_prev_y = 0.0
         self._audio_buffer = np.empty(0, dtype=np.float32)
         logger.debug("AudioDemodulator: filter states reset")
 
@@ -127,10 +130,19 @@ class AudioDemodulator:
         """Return remaining buffered audio and clear the buffer."""
         if len(self._audio_buffer) == 0:
             return b""
-        pcm = np.int16(np.clip(self._audio_buffer, -1.0, 1.0) * 32767)
+        pcm = self._cpp_dsp.float_to_int16(self._audio_buffer, 1.0)
         self._audio_buffer = np.empty(0, dtype=np.float32)
         logger.debug(f"AudioDemodulator: flushed {len(pcm)} samples")
         return pcm.tobytes()
+
+    def get_stats(self) -> dict:
+        """Return diagnostic statistics about the audio demodulator."""
+        return {
+            "native_cpp": self._cpp_dsp.is_native_available,
+            "target_rate": self.target_audio_rate,
+            "baseband_rate": self.baseband_rate,
+            "buffer_samples": len(self._audio_buffer),
+        }
 
     def demodulate(
         self,
@@ -143,30 +155,28 @@ class AudioDemodulator:
         if len(samples) == 0 or sample_rate_hz <= 0:
             return []
 
-        # 1. Frequency-shift station to baseband
+        # 1. Frequency-shift station to baseband and decimate (C++ NCO)
         offset = center_freq_hz - target_freq_hz
-        t = np.arange(len(samples), dtype=np.float32) / sample_rate_hz
-        shifted = (samples * np.exp(2j * np.pi * offset * t)).astype(np.complex64)
-
-        # 2. Decimate to BASEBAND_RATE (~200 kHz)
         decimation_factor = max(1, int(sample_rate_hz / self.BASEBAND_RATE))
         actual_bb_rate = sample_rate_hz / decimation_factor
 
-        if decimation_factor > 1:
-            trim = len(shifted) - (len(shifted) % decimation_factor)
-            if trim == 0:
-                return []
-            baseband = shifted[:trim].reshape(-1, decimation_factor).mean(axis=1)
-        else:
-            baseband = shifted
+        baseband, self._last_nco_phase = self._cpp_dsp.shift_and_decimate(
+            samples=samples,
+            sample_rate_hz=sample_rate_hz,
+            offset_hz=offset,
+            phase=self._last_nco_phase,
+            decimation_factor=decimation_factor,
+        )
 
         if len(baseband) == 0:
             return []
 
-        # 3. Demodulate
+        # 2. Demodulate
         if mode.upper() == "AM":
-            demod = np.abs(baseband).astype(np.float32)
-            demod = self._apply_dc_block(demod, alpha=0.995)
+            demod = self._cpp_dsp.demod_am(baseband, scale_factor=1.0)
+            demod, self._dc_prev_x, self._dc_prev_y = self._cpp_dsp.dc_block(
+                demod, alpha=0.995, prev_x=self._dc_prev_x, prev_y=self._dc_prev_y
+            )
 
             b, a = self._get_lpf(cutoff_hz=5_000, rate_hz=actual_bb_rate)
             if self._lpf_zi is None:
@@ -174,25 +184,23 @@ class AudioDemodulator:
             demod, self._lpf_zi = sp_signal.lfilter(b, a, demod, zi=self._lpf_zi)
             demod = demod.astype(np.float32)
             
-            # Fixed gain for AM (avoid per-chunk peak normalization which ruins audio)
-            demod *= 2.0 
+            # Fixed gain for AM
+            demod *= 2.0
 
         else:  # FM
-            # Delay-multiply FM demodulation (avoids unwrap issues)
-            # phase_diff = angle( x[n] * conj(x[n-1]) )
-            if not hasattr(self, '_last_complex_sample'):
-                self._last_complex_sample = np.complex64(0.0)
-            
-            delayed = np.concatenate(([self._last_complex_sample], baseband[:-1]))
-            self._last_complex_sample = baseband[-1]
-            
-            phase_diff = np.angle(baseband * np.conj(delayed)).astype(np.float32)
-
-            # Normalize: +/-75 kHz deviation -> +/-1.0
             max_dev = 75_000.0
-            demod = phase_diff * (actual_bb_rate / (2.0 * np.pi * max_dev))
+            scale_factor = actual_bb_rate / (2.0 * np.pi * max_dev)
 
-            demod = self._apply_dc_block(demod, alpha=0.995)
+            demod, self._last_i, self._last_q = self._cpp_dsp.demod_fm(
+                baseband=baseband,
+                scale_factor=scale_factor,
+                last_i=self._last_i,
+                last_q=self._last_q,
+            )
+
+            demod, self._dc_prev_x, self._dc_prev_y = self._cpp_dsp.dc_block(
+                demod, alpha=0.995, prev_x=self._dc_prev_x, prev_y=self._dc_prev_y
+            )
 
             b, a = self._get_lpf(cutoff_hz=15_000, rate_hz=actual_bb_rate)
             if self._lpf_zi is None:
@@ -200,12 +208,17 @@ class AudioDemodulator:
             demod, self._lpf_zi = sp_signal.lfilter(b, a, demod, zi=self._lpf_zi)
             demod = demod.astype(np.float32)
 
-            demod = self._apply_deemphasis(demod, actual_bb_rate)
+            # De-emphasis (75 us)
+            tau = 75e-6
+            alpha = float(tau / (tau + 1.0 / actual_bb_rate))
+            demod, self._deemph_prev_y = self._cpp_dsp.deemphasis(
+                demod, alpha=alpha, prev_y=self._deemph_prev_y
+            )
             
             # Fixed gain for FM
             demod *= 2.0
 
-        # 4. Resample to 48 kHz (Fast Linear Interpolation)
+        # 3. Resample to 48 kHz
         if len(demod) < 2:
             return []
 
@@ -213,13 +226,9 @@ class AudioDemodulator:
         if n_out < 1:
             return []
 
-        audio = np.interp(
-            np.linspace(0.0, 1.0, n_out),
-            np.linspace(0.0, 1.0, len(demod)),
-            demod,
-        ).astype(np.float32)
+        audio = self._cpp_dsp.resample_linear(demod, n_out)
 
-        # 5. Accumulate and emit fixed-size chunks
+        # 4. Accumulate and emit fixed-size chunks
         self._audio_buffer = np.concatenate([self._audio_buffer, audio])
 
         chunk_samples = int(self.target_audio_rate * self._chunk_duration_sec)
@@ -228,7 +237,7 @@ class AudioDemodulator:
         while len(self._audio_buffer) >= chunk_samples:
             chunk = self._audio_buffer[:chunk_samples]
             self._audio_buffer = self._audio_buffer[chunk_samples:]
-            pcm = np.int16(np.clip(chunk, -1.0, 1.0) * 32767)
+            pcm = self._cpp_dsp.float_to_int16(chunk, 1.0)
             chunks.append(pcm.tobytes())
 
         return chunks

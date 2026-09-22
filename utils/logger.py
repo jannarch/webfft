@@ -62,7 +62,7 @@ def setup_logger(name: str = "sdr_monitor",
     file_handler.setFormatter(file_fmt)
     logger.addHandler(file_handler)
 
-    logger.info("Logger initialized  →  %s", log_file)
+    logger.info("Logger initialized  ->  %s", log_file)
     return logger
 
 

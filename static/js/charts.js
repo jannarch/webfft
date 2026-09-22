@@ -9,6 +9,7 @@ class SpectrumChart {
         this.freqs = [];
         this.mags = [];
         this.peaks = [];
+        this.stationMarkers = [];
         this.threshold = -70;
 
         // View range in Hz (null = auto from data)
@@ -38,7 +39,7 @@ class SpectrumChart {
     }
 
     _animate() {
-        if (this._needsRedraw) {
+        if (this._needsRedraw && this.canvas && this.canvas.offsetParent !== null) {
             this._draw();
             this._needsRedraw = false;
         }
@@ -273,7 +274,9 @@ class SpectrumChart {
     updateData(freqs, mags, peaks) {
         this.freqs = freqs;
         this.mags = mags;
-        this.peaks = peaks;
+        this.peaks = peaks; 
+        if (this._lastupdate && Date.now() - this._lastUpdate < 50) return;
+        this._lastUpdate = Date.now();
 
         // Clamp view to data bounds if fully outside
         if (freqs.length) {
@@ -292,6 +295,11 @@ class SpectrumChart {
 
     setThreshold(val) {
         this.threshold = val;
+        this.draw();
+    }
+
+    setStationMarkers(markers) {
+        this.stationMarkers = markers || [];
         this.draw();
     }
 
@@ -441,6 +449,40 @@ class SpectrumChart {
         ctx.textAlign = 'right';
         ctx.fillText(`${this.threshold} dBm`, w - 6, threshY - 6);
 
+        // ── Station Schedule Markers ───────────────────────────────────────
+        if (this.stationMarkers && this.stationMarkers.length > 0) {
+            for (const st of this.stationMarkers) {
+                if (st.frequency_hz < fMin || st.frequency_hz > fMax) continue;
+                const sx = this._freqToX(st.frequency_hz);
+                
+                // Vertical dotted indicator line
+                ctx.strokeStyle = 'rgba(34, 211, 160, 0.7)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Flag label box
+                const text = `${st.station} (${st.language || st.itu})`;
+                ctx.font = '10px Inter';
+                const tw = ctx.measureText(text).width + 10;
+                const tx = Math.min(Math.max(sx - tw / 2, 4), w - tw - 4);
+                
+                ctx.fillStyle = 'rgba(13, 21, 38, 0.85)';
+                ctx.strokeStyle = '#22d3a0';
+                ctx.lineWidth = 1;
+                ctx.fillRect(tx, 4, tw, 18);
+                ctx.strokeRect(tx, 4, tw, 18);
+                
+                ctx.fillStyle = '#22d3a0';
+                ctx.textAlign = 'center';
+                ctx.fillText(text, tx + tw / 2, 16);
+            }
+        }
+
         // ── Peaks ──────────────────────────────────────────────────────────
         for (const p of (this.peaks || [])) {
             if (p.freq < fMin || p.freq > fMax) continue;
@@ -576,7 +618,7 @@ class WaterfallChart {
         if (!this.canvas) throw new Error(`Waterfall canvas not found: ${canvasId}`);
         this.ctx = this.canvas.getContext('2d');
 
-        this.historySize = 300;
+        this.historySize = 150;
 
         // Offscreen stores the FULL-width history (never cropped)
         this.offscreenCanvas = document.createElement('canvas');
@@ -643,8 +685,11 @@ class WaterfallChart {
         const oh = this.offscreenCanvas.height;
 
         // Scroll: shift everything down by 1 row
-        const imageData = this.offscreenCtx.getImageData(0, 0, ow, oh - 1);
-        this.offscreenCtx.putImageData(imageData, 0, 1);
+        this.offscreenCtx.drawImage(
+            this.offscreenCanvas,
+            0, 0, ow, oh - 1,
+            0, 1, ow, oh - 1
+        );
 
         // Draw new row at y=0 (always full width = full frequency range)
         const newRow = this.offscreenCtx.createImageData(ow, 1);

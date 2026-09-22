@@ -7,11 +7,10 @@ class LocalizationMap {
         this.estimateMarker = null;
         this.estimateCircle = null;
         
-        // Dark theme map tiles (CartoDB Dark Matter)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
+        // Dark theme map tiles (Esri World Dark Gray Base - 100% free, no API key required)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+            maxZoom: 16
         }).addTo(this.map);
         
         this.markers = L.layerGroup().addTo(this.map);
@@ -124,5 +123,74 @@ class LocalizationMap {
     
     clearDetections() {
         this.markers.clearLayers();
+    }
+
+    renderTransmitterMarkers(stations, rxPos) {
+        if (!this.stationLayerGroup) {
+            this.stationLayerGroup = L.layerGroup().addTo(this.map);
+        }
+        this.stationLayerGroup.clearLayers();
+
+        if (!stations || !Array.isArray(stations) || stations.length === 0) return;
+
+        const rx = rxPos || this.getReceiverLocation();
+        const bounds = L.latLngBounds();
+        if (rx && Number.isFinite(rx.lat) && Number.isFinite(rx.lng)) {
+            bounds.extend([rx.lat, rx.lng]);
+        }
+
+        let count = 0;
+        const addedCoords = new Set();
+
+        for (const st of stations) {
+            if (!st.lat || !st.lon) continue;
+
+            const coordKey = `${st.lat.toFixed(2)},${st.lon.toFixed(2)}`;
+            bounds.extend([st.lat, st.lon]);
+
+            const popupContent = `
+                <div style="font-family:'Inter',sans-serif; font-size:0.8rem; color:#e8f0ff;">
+                    <b style="color:#22d3a0; font-size:0.9rem;">${st.station}</b><br>
+                    <b>Frequency:</b> ${st.frequency_khz} kHz<br>
+                    <b>Country (ITU):</b> ${st.itu || 'N/A'}<br>
+                    <b>Language:</b> ${st.language || 'N/A'}<br>
+                    <b>Target Region:</b> ${st.target || 'N/A'}<br>
+                    <b>Schedule:</b> ${st.time_str || '0000-2400'} UTC
+                </div>
+            `;
+
+            const circleMarker = L.circleMarker([st.lat, st.lon], {
+                radius: 7,
+                color: '#22d3a0',
+                fillColor: '#0d1526',
+                fillOpacity: 0.9,
+                weight: 2
+            }).bindPopup(popupContent);
+
+            this.stationLayerGroup.addLayer(circleMarker);
+
+            // Draw vector path line from SDR Receiver to Transmitter Country
+            if (rx && Number.isFinite(rx.lat) && Number.isFinite(rx.lng) && !addedCoords.has(coordKey)) {
+                addedCoords.add(coordKey);
+                const line = L.polyline([[rx.lat, rx.lng], [st.lat, st.lon]], {
+                    color: '#3d8bff',
+                    weight: 1.5,
+                    opacity: 0.65,
+                    dashArray: '4, 6'
+                });
+                this.stationLayerGroup.addLayer(line);
+            }
+
+            count++;
+            if (count >= 40) break;
+        }
+
+        if (bounds.isValid() && count > 0) {
+            try {
+                this.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 7 });
+            } catch (err) {
+                console.error("Map fitBounds failed:", err);
+            }
+        }
     }
 }

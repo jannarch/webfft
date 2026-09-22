@@ -18,7 +18,10 @@ from core.signal_processor import SignalProcessor
 from core.iq_recorder import IQRecorder
 from core.localization import MeasPoint, PathLossModel, RSSILocalizer
 from core.audio_demodulator import AudioDemodulator
+from core.sdrpp_bridge import SDRPPAudioBridge
+from core.sdrpp_control import SDRPPControl
 from database.db_manager import DatabaseManager
+from database.schedule_manager import ScheduleManager
 from database.models import Detection
 from utils.logger import setup_logger, get_logger
 
@@ -40,6 +43,7 @@ app.add_middleware(
 sdr_engine = SDREngine()
 signal_processor = SignalProcessor()
 db_manager = DatabaseManager()
+schedule_manager = ScheduleManager()
 iq_recorder = IQRecorder()
 
 # Active session ID
@@ -60,6 +64,9 @@ audio_demod = AudioDemodulator()
 audio_target_freq_hz: Optional[float] = None
 audio_mode: str = "FM"
 audio_queues: List[asyncio.Queue] = []
+# SDR++ Audio Bridge
+sdrpp_control = SDRPPControl()
+sdrpp_bridge: Optional[SDRPPAudioBridge] = None
 audio_loop: Optional[asyncio.AbstractEventLoop] = None
 
 # Models
@@ -104,6 +111,7 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
             if abs(peak.frequency_hz - center_hz) < 1000:
                 continue
             _detection_buffer.append({
+                "id": None,
                 "frequency_hz": peak.frequency_hz,
                 "power_dbm": peak.power_dbm,
                 "bandwidth_hz": peak.bandwidth_hz,
@@ -117,27 +125,21 @@ def on_samples_ready(samples, center_hz, sample_rate_hz, timestamp):
 
     # Process Audio if anyone is listening
     if audio_target_freq_hz is not None and len(audio_queues) > 0 and audio_loop is not None:
-        try:
-            pcm_chunks = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
-            
-            # Log audio production statistics occasionally
-            if len(pcm_chunks) > 0:
-                for i, q in enumerate(audio_queues):
-                    logger.debug(f"Audio: produced {len(pcm_chunks)} chunks, queue {i} size: {q.qsize()}")
-            
-            for chunk in pcm_chunks:
-                for q in list(audio_queues):
-                    # Updated queue limit for larger circular buffer (100→150 chunks)
-                    if q.qsize() < 150:
-                        try:
-                            audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
-                        except Exception as e:
-                            logger.warning(f"Failed to queue audio chunk: {e}")
-                    else:
-                        # Drop chunks if queue is full to prevent memory buildup
-                        logger.warning(f"Audio queue full (size: {q.qsize()}), dropping chunk to prevent overflow")
-        except Exception as e:
-            logger.error(f"Audio demodulation error: {e}", exc_info=True)
+        # If SDR++ bridge is actively receiving UDP audio, skip Python demod entirely
+        use_sdrpp = sdrpp_bridge is not None and sdrpp_bridge.is_receiving()
+        
+        if not use_sdrpp:
+            try:
+                pcm_chunks = audio_demod.demodulate(samples, sample_rate_hz, audio_target_freq_hz, center_hz, mode=audio_mode)
+                for chunk in pcm_chunks:
+                    for q in list(audio_queues):
+                        if q.qsize() < 150:
+                            try:
+                                audio_loop.call_soon_threadsafe(q.put_nowait, chunk)
+                            except Exception as e:
+                                logger.warning(f"Failed to queue audio chunk: {e}")
+            except Exception as e:
+                logger.error(f"Audio demodulation error: {e}", exc_info=True)
         
     # Update latest frame for WebSockets
     with frame_lock:
@@ -199,6 +201,7 @@ def _estimate_localization_result() -> Dict[str, Any]:
 # ─── Detection Flush Thread ──────────────────────────────────────────────────
 def _detection_flush_worker():
     """Background thread that flushes buffered detections to SQLite."""
+    global _detection_buffer
     while True:
         time.sleep(_detection_flush_interval)
         with _detection_lock:
@@ -233,7 +236,7 @@ def _init_and_start_sdr():
 
 @app.on_event("startup")
 def startup_event():
-    global _session_id, audio_loop
+    global _session_id, audio_loop, sdrpp_bridge
     audio_loop = asyncio.get_event_loop()
     os.makedirs("static", exist_ok=True)
 
@@ -246,6 +249,18 @@ def startup_event():
     cfg.sample_rate_hz = 2e6
     sdr_engine._config = cfg
 
+    # Start SDR++ audio bridge (listens for SDR++ Network Output UDP stream)
+    sdrpp_bridge = SDRPPAudioBridge(
+        host="127.0.0.1",
+        port=7355,
+        audio_queues=audio_queues,
+        audio_loop=audio_loop
+    )
+    sdrpp_bridge.start()
+    sdrpp_control._connect()
+    logger.info("Web-SDR Application Started. Session: %s", _session_id)
+    logger.info("SDR++ audio bridge started on UDP 127.0.0.1:7355")
+
     # Initialize and auto-start
     _init_and_start_sdr()
     logger.info("Web-SDR Application Started. Session: %s", _session_id)
@@ -253,11 +268,17 @@ def startup_event():
 @app.on_event("shutdown")
 def shutdown_event():
     logger.info("Shutting down Web-SDR Application...")
+    if sdrpp_bridge:
+        sdrpp_bridge.stop()
     sdr_engine.stop()
     if iq_recorder.is_active:
         iq_recorder.stop()
     if _session_id:
         db_manager.close_session(_session_id)
+    if sdrpp_control:
+        sdrpp_control.close()
+    if sdrpp_bridge:
+        sdrpp_bridge.stop()
 
 # ─── Static Files and Web Interface ──────────────────────────────────────────
 if not os.path.exists("static"):
@@ -529,6 +550,49 @@ def get_localization_estimate():
     """Get the current RSSI trilateration estimate from captured points."""
     return _estimate_localization_result()
 
+# ─── Shortwave Schedule API ──────────────────────────────────────────────────
+@app.get("/api/schedules/lookup")
+def lookup_schedule(
+    freq_hz: float,
+    tolerance_hz: float = 5000.0,
+    filter_time: bool = True
+):
+    """Lookup active stations at or near target frequency."""
+    return schedule_manager.lookup_frequency(
+        freq_hz=freq_hz,
+        tolerance_hz=tolerance_hz,
+        filter_active_time=filter_time
+    )
+
+@app.get("/api/schedules/band")
+def lookup_schedule_band(
+    min_freq_hz: float,
+    max_freq_hz: float,
+    filter_time: bool = True,
+    max_results: int = 50
+):
+    """Lookup active stations in a frequency range (e.g. current waterfall span)."""
+    return schedule_manager.lookup_range(
+        min_freq_hz=min_freq_hz,
+        max_freq_hz=max_freq_hz,
+        filter_active_time=filter_time,
+        max_results=max_results
+    )
+
+@app.get("/api/schedules/search")
+def search_schedule(
+    q: str,
+    filter_time: bool = False,
+    limit: int = 50
+):
+    """Search station schedule by broadcaster name, country, language, or frequency."""
+    return schedule_manager.search_stations(
+        query=q,
+        filter_active_time=filter_time,
+        limit=limit
+    )
+
+
 def pack_spectrum_frame(frame: dict) -> bytes:
     """Pack spectrum frame into binary format.
     Header: timestamp (d), center_hz (d), sample_rate_hz (d), num_peaks (I), num_mags (I) (32 bytes)
@@ -593,7 +657,8 @@ async def ws_audio(websocket: WebSocket):
     
     q = asyncio.Queue(maxsize=200)  # Larger queue for better buffering
     audio_queues.append(q)
-    
+    if sdrpp_bridge:
+        sdrpp_bridge.audio_queues = audio_queues
     # Audio streaming parameters (WebSDR-inspired)
     TARGET_CHUNK_RATE = 50  # chunks per second (20ms chunks)
     SEND_INTERVAL = 1.0 / TARGET_CHUNK_RATE
@@ -641,6 +706,8 @@ async def ws_audio(websocket: WebSocket):
                 audio_target_freq_hz = float(msg.get("freq_hz", 99e6))
                 audio_mode = msg.get("mode", "FM")
                 audio_demod.reset_filter_state()
+                sdrpp_control.set_frequency(audio_target_freq_hz)
+                sdrpp_control.set_mode(audio_mode)
                 logger.info(f"Audio streaming started for {audio_target_freq_hz / 1e6} MHz in {audio_mode} mode")
             elif action == "stop":
                 # Only stop if it's the current target (in a real multi-user setup we'd be more careful)
@@ -654,6 +721,7 @@ async def ws_audio(websocket: WebSocket):
                                 audio_loop.call_soon_threadsafe(q.put_nowait, remaining)
                 except Exception as e:
                     logger.error(f"Audio flush error: {e}")
+                    sdrpp_control.stop()
                 logger.info("Audio streaming stopped.")
     except WebSocketDisconnect:
         logger.info("Audio WebSocket client disconnected.")
@@ -663,6 +731,8 @@ async def ws_audio(websocket: WebSocket):
         send_task.cancel()
         if q in audio_queues:
             audio_queues.remove(q)
+        if sdrpp_bridge:
+            sdrpp_bridge.audio_queues = audio_queues
         # If no more listeners, stop demodulating
         if len(audio_queues) == 0:
             audio_target_freq_hz = None

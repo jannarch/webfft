@@ -1,0 +1,69 @@
+2026-09-10 09:20:00 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260910.log
+2026-09-10 09:20:01 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 09:20:01 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 09:20:01 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:96): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 09:20:01 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 09:25:25 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260910.log
+2026-09-10 09:25:25 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 09:25:25 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 09:25:25 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:96): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 09:25:25 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 09:25:26 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: DF21FB0E [simulation]
+2026-09-10 09:25:28 [INFO    ] sdr_monitor.web_backend (main.py:259): Web-SDR Application Started. Session: DF21FB0E
+2026-09-10 09:25:28 [INFO    ] sdr_monitor.web_backend (main.py:260): SDR++ audio bridge started on UDP 127.0.0.1:7355
+2026-09-10 09:25:28 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-09-10 09:25:28 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:465): SDREngine initialized in simulation mode.
+2026-09-10 09:25:29 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 857949BE [simulation]
+2026-09-10 09:25:29 [INFO    ] sdr_monitor.web_backend (main.py:233): SDR started in [SIMULATION] mode. Session: 857949BE
+2026-09-10 09:25:29 [INFO    ] sdr_monitor.web_backend (main.py:264): Web-SDR Application Started. Session: 857949BE
+2026-09-10 09:30:50 [INFO    ] sdr_monitor.web_backend (main.py:543): Localization points reset.
+2026-09-10 09:30:52 [INFO    ] sdr_monitor.web_backend (main.py:535): Localization point captured: Captured from UI (RSSI=-47.9 dBm)
+2026-09-10 09:31:11 [INFO    ] sdr_monitor.web_backend (main.py:543): Localization points reset.
+2026-09-10 09:31:12 [INFO    ] sdr_monitor.web_backend (main.py:543): Localization points reset.
+2026-09-10 09:36:32 [INFO    ] sdr_monitor.web_backend (main.py:268): Shutting down Web-SDR Application...
+2026-09-10 09:36:48 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260910.log
+2026-09-10 09:36:48 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 09:36:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 09:36:48 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:103): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 09:36:48 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 09:36:48 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 87E7FB07 [simulation]
+2026-09-10 09:36:50 [INFO    ] sdr_monitor.web_backend (main.py:259): Web-SDR Application Started. Session: 87E7FB07
+2026-09-10 09:36:50 [INFO    ] sdr_monitor.web_backend (main.py:260): SDR++ audio bridge started on UDP 127.0.0.1:7355
+2026-09-10 09:36:51 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-09-10 09:36:51 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:465): SDREngine initialized in simulation mode.
+2026-09-10 09:36:51 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 8A9A9634 [simulation]
+2026-09-10 09:36:51 [INFO    ] sdr_monitor.web_backend (main.py:233): SDR started in [SIMULATION] mode. Session: 8A9A9634
+2026-09-10 09:36:51 [INFO    ] sdr_monitor.web_backend (main.py:264): Web-SDR Application Started. Session: 8A9A9634
+2026-09-10 09:37:26 [INFO    ] sdr_monitor.web_backend (main.py:645): Client disconnected from WebSocket.
+2026-09-10 09:37:31 [INFO    ] sdr_monitor.web_backend (main.py:645): Client disconnected from WebSocket.
+2026-09-10 09:40:39 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260910.log
+2026-09-10 09:40:39 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 09:40:39 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 09:40:39 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:103): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 09:40:39 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 09:41:23 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  ->  logs\sdr_monitor_20260910.log
+2026-09-10 09:41:23 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 09:41:23 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 09:41:23 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:103): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 09:41:23 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 09:47:12 [INFO    ] sdr_monitor.web_backend (main.py:645): Client disconnected from WebSocket.
+2026-09-10 09:49:25 [INFO    ] sdr_monitor.web_backend (main.py:645): Client disconnected from WebSocket.
+2026-09-10 15:21:18 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  ->  logs\sdr_monitor_20260910.log
+2026-09-10 15:21:19 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 15:21:19 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 15:21:19 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:103): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 15:21:19 [INFO    ] sdr_monitor.audio_demodulator (audio_demodulator.py:56): AudioDemodulator init: [Native C++ DLL (AVX2/FMA)], target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 15:28:49 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-09-10 15:28:49 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:218): SoapySDR: no HackRF device found. Enumerated devices: ()
+2026-09-10 15:28:49 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:465): SDREngine initialized in simulation mode.
+2026-09-10 15:28:49 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:465): SDREngine initialized in simulation mode.
+2026-09-10 15:28:50 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 1D541250 [simulation]
+2026-09-10 15:28:51 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 10AC537A [simulation]
+2026-09-10 15:28:51 [INFO    ] sdr_monitor.web_backend (main.py:233): SDR started in [SIMULATION] mode. Session: 1D541250
+2026-09-10 15:28:54 [INFO    ] sdr_monitor.web_backend (main.py:645): Client disconnected from WebSocket.
+2026-09-10 15:33:09 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  ->  logs\sdr_monitor_20260910.log
+2026-09-10 15:33:09 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-10 15:33:09 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-10 15:33:09 [INFO    ] sdr_monitor.schedule_manager (schedule_manager.py:103): Successfully loaded 9442 schedule records from database/sked-a26.csv
+2026-09-10 15:33:09 [INFO    ] sdr_monitor.audio_demodulator (audio_demodulator.py:56): AudioDemodulator init: [Native C++ DLL (AVX2/FMA)], target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-10 15:34:34 [INFO    ] sdr_monitor.web_backend (main.py:268): Shutting down Web-SDR Application...

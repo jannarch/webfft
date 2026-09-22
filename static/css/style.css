@@ -672,3 +672,27 @@ tbody td:first-child { color: var(--text-secondary); }
 .mt-1 { margin-top: 6px; }
 .mt-2 { margin-top: 10px; }
 .gap-sm { gap: 6px; }
+
+/* ── Leaflet Dark Popup Styling ──────────────────────────────── */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    background: #060a12 !important;
+    color: #e8f0ff !important;
+    border: 1px solid rgba(34, 211, 160, 0.4) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9) !important;
+    border-radius: 8px !important;
+}
+
+.leaflet-popup-content {
+    margin: 10px 14px !important;
+    line-height: 1.5 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    color: #94a3b8 !important;
+    padding: 6px 6px 0 0 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+    color: #22d3a0 !important;
+}

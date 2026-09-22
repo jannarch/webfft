@@ -1,0 +1,12 @@
+2026-09-01 15:32:02 [INFO    ] sdr_monitor (logger.py:65): Logger initialized  →  logs\sdr_monitor_20260901.log
+2026-09-01 15:32:02 [DEBUG   ] sdr_monitor.signal_processor (signal_processor.py:85): SignalProcessor  fft=1024  window=hann  avg=3
+2026-09-01 15:32:02 [INFO    ] sdr_monitor.db_manager (db_manager.py:29): Database initialized at: data/sdr_monitor.db
+2026-09-01 15:32:02 [DEBUG   ] sdr_monitor.audio_demodulator (audio_demodulator.py:54): AudioDemodulator init: target=48000 Hz, baseband=200000 Hz, chunk=50 ms
+2026-09-01 15:32:04 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: 42AE3625 [simulation]
+2026-09-01 15:32:08 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:224): HackRF One detected and configured.
+2026-09-01 15:32:08 [INFO    ] sdr_monitor.sdr_engine (sdr_engine.py:465): SDREngine initialized in hardware mode.
+2026-09-01 15:32:10 [INFO    ] sdr_monitor.db_manager (db_manager.py:132): Session created: B18A1C77 [hardware]
+2026-09-01 15:32:10 [INFO    ] sdr_monitor.web_backend (main.py:225): SDR started in [HARDWARE] mode. Session: B18A1C77
+2026-09-01 15:32:10 [INFO    ] sdr_monitor.web_backend (main.py:244): Web-SDR Application Started. Session: B18A1C77
+2026-09-01 15:32:10 [ERROR   ] sdr_monitor.sdr_engine (sdr_engine.py:329): Hardware streaming error: local variable 'sdrpp_bridge' referenced before assignment
+2026-09-01 15:32:50 [INFO    ] sdr_monitor.web_backend (main.py:248): Shutting down Web-SDR Application...

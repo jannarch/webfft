@@ -361,6 +361,47 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Classification failed:", e);
             logDebug("Classification failed: " + (e.message || e));
         }
+
+        // Also check shortwave station database schedule
+        await updateStationSchedule(freqHz);
+    }
+
+    async function updateStationSchedule(freqHz) {
+        const stName = document.getElementById('st-name');
+        const stDetails = document.getElementById('st-details');
+        if (!stName || !stDetails) return;
+
+        try {
+            const res = await fetch(`/api/schedules/lookup?freq_hz=${freqHz}&filter_time=true`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const st = data[0];
+                stName.textContent = `${st.station} (${st.frequency_khz} kHz)`;
+                stDetails.textContent = `Lang: ${st.language || 'N/A'} | ITU: ${st.itu || 'N/A'} | Target: ${st.target || 'N/A'} | Time: ${st.time_str || '24h'}`;
+                if (map && typeof map.renderTransmitterMarkers === 'function') {
+                    map.renderTransmitterMarkers(data);
+                }
+            } else {
+                stName.textContent = 'No Schedule Match';
+                stDetails.textContent = `No active broadcast scheduled around ${(freqHz/1e3).toFixed(1)} kHz at current UTC time.`;
+            }
+        } catch (err) {
+            console.error('Schedule lookup failed:', err);
+        }
+    }
+
+    async function fetchWaterfallStationMarkers() {
+        if (!spectrum) return;
+        const range = spectrum._freqRange();
+        if (!range || !range.fMin || !range.fMax) return;
+
+        try {
+            const res = await fetch(`/api/schedules/band?min_freq_hz=${range.fMin}&max_freq_hz=${range.fMax}&filter_time=true&max_results=20`);
+            const data = await res.json();
+            spectrum.setStationMarkers(data);
+        } catch (err) {
+            console.error('Waterfall schedule markers fetch failed:', err);
+        }
     }
 
     // ─── Event Listeners ─────────────────────────────────────────────────────
@@ -649,14 +690,93 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ─── Shortwave Schedule Modal Handlers ──────────────────────────────────
+    const scheduleModal = document.getElementById('schedule-modal');
+    const btnOpenSchedules = document.getElementById('btn-open-schedules');
+    const btnCloseSchedule = document.getElementById('btn-close-schedule');
+    const btnSearchSchedule = document.getElementById('btn-search-schedule');
+    const scheduleSearchInput = document.getElementById('schedule-search-input');
+    const scheduleTbody = document.getElementById('schedule-tbody');
+
+    if (btnOpenSchedules && scheduleModal) {
+        btnOpenSchedules.addEventListener('click', () => {
+            scheduleModal.style.display = 'flex';
+            performScheduleSearch('');
+        });
+    }
+
+    if (btnCloseSchedule && scheduleModal) {
+        btnCloseSchedule.addEventListener('click', () => {
+            scheduleModal.style.display = 'none';
+        });
+    }
+
+    if (btnSearchSchedule && scheduleSearchInput) {
+        btnSearchSchedule.addEventListener('click', () => {
+            performScheduleSearch(scheduleSearchInput.value);
+        });
+        scheduleSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') performScheduleSearch(scheduleSearchInput.value);
+        });
+    }
+
+    async function performScheduleSearch(query) {
+        if (!scheduleTbody) return;
+        scheduleTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Searching schedules...</td></tr>';
+        try {
+            const res = await fetch(`/api/schedules/search?q=${encodeURIComponent(query)}&filter_time=false&limit=60`);
+            const data = await res.json();
+            if (!data || data.length === 0) {
+                scheduleTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No matching shortwave schedules found.</td></tr>';
+                return;
+            }
+
+            // Render country pins and propagation lines on map!
+            if (map && typeof map.renderTransmitterMarkers === 'function') {
+                map.renderTransmitterMarkers(data);
+            }
+            scheduleTbody.innerHTML = data.map(st => `
+                <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:8px 10px; font-weight:600; color:#22d3a0;">${st.frequency_khz} kHz</td>
+                    <td style="padding:8px 10px;">${st.time_str || '0000-2400'}</td>
+                    <td style="padding:8px 10px; font-weight:500;">${st.station}</td>
+                    <td style="padding:8px 10px;">${st.language || '-'}</td>
+                    <td style="padding:8px 10px;">${st.itu || '-'}</td>
+                    <td style="padding:8px 10px;">${st.target || '-'}</td>
+                    <td style="padding:8px 10px; text-align:center;">
+                        <button class="btn btn-primary btn-sm btn-tune-st" data-freq="${st.frequency_hz}">Tune</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.btn-tune-st').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const freqHz = parseFloat(e.target.getAttribute('data-freq'));
+                    if (Number.isFinite(freqHz)) {
+                        const freqMHz = freqHz / 1e6;
+                        classifyFreqInput.value = freqMHz.toFixed(4);
+                        if (scheduleModal) scheduleModal.style.display = 'none';
+                        await classifySignal(freqHz);
+                        logDebug(`Tuned to schedule: ${freqMHz.toFixed(4)} MHz`);
+                    }
+                });
+            });
+        } catch (err) {
+            console.error('Schedule search error:', err);
+            scheduleTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--danger);">Error retrieving schedule database.</td></tr>';
+        }
+    }
+
     // ─── Boot ────────────────────────────────────────────────────────────────
     connectWebSocket();
     fetchStatus();
     fetchDetections();
     
-    // Poll status every 2 seconds (for recording timer etc)
+    // Poll status every 2 seconds & waterfall markers every 5 seconds
     setInterval(fetchStatus, 2000);
     setInterval(fetchDetections, 10000);
+    setInterval(fetchWaterfallStationMarkers, 5000);
+    fetchWaterfallStationMarkers();
     console.log('Web-SDR app initialized successfully.');
     } catch (err) {
         console.error('Web-SDR initialization failed:', err);
